@@ -90,10 +90,25 @@ async function storeProfileAndDerived(nextProfile){
   });
 }
 
+
+/* A natív iOS dátummező láthatatlan, kattintható réteg a fix méretű keret fölött.
+   A felirat mindig az input tényleges dátumértékét mutatja, helyi dátumformátumban. */
+function syncDateControls(){
+  document.querySelectorAll('.date-control').forEach(control=>{
+    const input=control.querySelector('input[type="date"]');
+    const value=control.querySelector('.date-control-value');
+    if(!input||!value)return;
+    value.textContent=safeDate(input.value)
+      ?new Intl.DateTimeFormat('hu-HU',{year:'numeric',month:'short',day:'numeric'}).format(dateObj(input.value))
+      :'Válassz dátumot';
+  });
+}
+
 function changePage(name){
   activePage=name;
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+name));
   document.querySelectorAll('.tabbar button').forEach(b=>{const selected=b.dataset.page===name;b.classList.toggle('selected',selected);b.setAttribute('aria-current',selected?'page':'false');});
+  syncDateControls();
   window.scrollTo({top:0,behavior:'auto'});
   if(name==='dashboard'||name==='workout')requestAnimationFrame(renderCharts);
 }
@@ -364,9 +379,9 @@ function renderCharts(){
 }
 function validRange(value,min,max,name){if(!Number.isFinite(value)||value<min||value>max)throw Error(`${name}: adj meg ${min}–${max} közötti értéket.`);}
 function confirmDelete(label){return window.confirm(`Biztosan törölni szeretnéd ezt a bejegyzést?\n${label}`);}
-function resetWorkoutForm(){ $('workout-form').reset();$('workout-edit-id').value='';$('workout-date').value=today();$('workout-sets').value='3';$('workout-reps').value='8';$('workout-save').textContent='Gyakorlat mentése';}
-function resetWeightForm(){ $('weight-form').reset();$('weight-date').value=today();}
-function resetMeasureForm(){ $('measure-form').reset();$('measure-date').value=today();showSexFields();}
+function resetWorkoutForm(){ $('workout-form').reset();$('workout-edit-id').value='';$('workout-date').value=today();$('workout-sets').value='3';$('workout-reps').value='8';$('workout-save').textContent='Gyakorlat mentése';syncDateControls();}
+function resetWeightForm(){ $('weight-form').reset();$('weight-date').value=today();syncDateControls();}
+function resetMeasureForm(){ $('measure-form').reset();$('measure-date').value=today();showSexFields();syncDateControls();}
 async function onWeightSubmit(e){
   e.preventDefault();try{const date=$('weight-date').value,weight=decimal($('weight-value').value);if(!safeDate(date))throw Error('Érvénytelen dátum.');validRange(weight,20,400,'Testsúly');
     await operation('weights','put',{date,weight,bmi:bmi(weight,profile.height)});await refreshData();resetWeightForm();notify('Testsúly rögzítve.');
@@ -494,9 +509,15 @@ function refreshDatesOnNewDay(){
   });
   if(!unfinished){$('plan-session-date').value=now;renderPlanSession();}
   lastDateRefresh=now;
+  syncDateControls();
 }
 async function init(){
   const date=today();for(const id of ['weight-date','measure-date','workout-date','plan-session-date'])$(id).value=date;lastDateRefresh=date;
+  document.querySelectorAll('.date-control input[type="date"]').forEach(input=>{
+    input.addEventListener('input',syncDateControls);
+    input.addEventListener('change',syncDateControls);
+  });
+  syncDateControls();
   document.querySelectorAll('.tabbar button').forEach(b=>b.addEventListener('click',()=>changePage(b.dataset.page)));
   $('weight-form').addEventListener('submit',onWeightSubmit);$('measure-form').addEventListener('submit',onMeasureSubmit);
   $('workout-form').addEventListener('submit',onWorkoutSubmit);$('profile-form').addEventListener('submit',onProfileSubmit);
