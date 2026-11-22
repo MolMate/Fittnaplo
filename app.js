@@ -268,7 +268,7 @@ function renderPlanSession(){
     const when=prev?.source==='Excel'?('Excel – '+(prev.weekLabel||dateLabel(prev.date))):dateLabel(prev?.date);
     const load=Number.isFinite(prev?.weight)?format(prev.weight)+(prev.pairCount===2?' kg/kéz':' kg'):'—';
     const lastLine=prev?('Előző: '+when+' · '+prev.sets+' × '+prev.reps+' · '+load):'Még nincs korábbi bejegyzés ehhez a gyakorlathoz.';
-    const lastNote=prev?.variation?(' · '+prev.variation):prev?.note?(' · '+prev.note):'';
+    const lastNote=(prev?.variation?' · Gép/helyettesítés: '+prev.variation:'')+(prev?.note?' · '+prev.note:'');
     const target=ex.prescription||([ex.sets,ex.reps].every(Number.isFinite)?ex.sets+' × '+ex.reps:'');
     const detailsOpen=prior?.variation||prior?.note?' open':'';
     const weight=prior?.weight??'',sets=prior?.sets??'',reps=prior?.reps??'';
@@ -336,6 +336,12 @@ async function savePlanSession(exerciseId=null){
   if(!plan)throw Error('Válassz edzéstervet.');
   if(!safeDate(date))throw Error('Érvénytelen edzésdátum.');
   const rows=[];
+  // Egyetlen gyakorlat mentésekor a többi, még nem mentett űrlapmezőt megőrizzük.
+  const drafts=exerciseId?[...$('plan-session-list').querySelectorAll('.session-exercise')].filter(n=>n.dataset.exerciseId!==exerciseId).map(node=>({
+    id:node.dataset.exerciseId,
+    fields:Object.fromEntries([...node.querySelectorAll('input[data-field]')].map(input=>[input.dataset.field,input.value])),
+    detailsOpen:!!node.querySelector('.exercise-notes')?.open
+  })):[];
   for(const node of $('plan-session-list').querySelectorAll('.session-exercise')){
     if(exerciseId&&node.dataset.exerciseId!==exerciseId)continue;
     const ex=plan.exercises.find(x=>x.id===node.dataset.exerciseId);if(!ex)continue;
@@ -362,6 +368,14 @@ async function savePlanSession(exerciseId=null){
     tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Edzés mentése sikertelen.'));
   });
   await refreshData();
+  for(const draft of drafts){
+    const node=[...$('plan-session-list').querySelectorAll('.session-exercise')].find(n=>n.dataset.exerciseId===draft.id);
+    if(!node)continue;
+    for(const [key,value] of Object.entries(draft.fields)){
+      const input=node.querySelector('[data-field="'+key+'"]');if(input)input.value=value;
+    }
+    const details=node.querySelector('.exercise-notes');if(details)details.open=draft.detailsOpen;
+  }
   notify(rows.length===1?'Gyakorlat mentve.':rows.length+' gyakorlat mentve erre a napra.');
 }
 async function onSavePlanSession(e){
