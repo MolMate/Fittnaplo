@@ -229,12 +229,14 @@ function renderWorkouts(){
 /* Az edzéstervek külön IndexedDB tárolóba kerülnek. A régi workout bejegyzések változatlanok. */
 function activePlan(){return plans.find(p=>p.id===selectedPlanId)||null;}
 function renderPlans(){
-  const sel=$('plan-select');
+  const sel=$('plan-select'), editSel=$('plan-settings-select');
   if(!plans.some(p=>p.id===selectedPlanId))selectedPlanId=plans[0]?.id||null;
   sel.replaceChildren();
   if(!plans.length){const opt=document.createElement('option');opt.value='';opt.textContent='Hozz létre egy tervet';sel.append(opt);}
   else for(const p of plans){const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.append(o);}
   sel.value=selectedPlanId||'';
+  editSel.replaceChildren(...[...sel.options].map(option=>option.cloneNode(true)));
+  editSel.value=selectedPlanId||'';
   const plan=activePlan();
   $('plan-config').classList.toggle('hidden',!plan);
   $('plan-name').value=plan?.name||'';
@@ -367,9 +369,14 @@ function lineChart(id,series,unit){
     el('line',{x1:margin.left,x2:W-margin.right,y1:y,y2:y,stroke:'#2e435b','stroke-width':1,'stroke-dasharray':'3 5'});
     el('text',{x:margin.left-9,y:y+4,'text-anchor':'end',fill:'#8fa5b8','font-size':11},format(v,Math.abs(hi-lo)>30?0:1));
   }
-  const tickCount=Math.min(5,dates.length);
-  const selected=[];for(let i=0;i<tickCount;i++){const idx=Math.round(i*(dates.length-1)/Math.max(tickCount-1,1));if(!selected.includes(idx))selected.push(idx);}
-  for(const idx of selected){const x=X(dates[idx]);el('text',{x,y:H-9,'text-anchor':'middle',fill:'#8fa5b8','font-size':11},shortDate(dates[idx]));}
+  // Az időtengely osztásai egyenletesek, a képernyő hasznos szélességéhez igazodnak.
+  const tickCount=Math.min(5,Math.max(2,Math.floor(cw/75)));
+  const axisDate=new Intl.DateTimeFormat('hu-HU',{month:'short',day:'numeric'});
+  for(let i=0;i<tickCount;i++){
+    const frac=i/(tickCount-1),x=margin.left+cw*frac;
+    const t=minT+(maxT-minT)*frac;
+    el('text',{x,y:H-9,'text-anchor':'middle',fill:'#8fa5b8','font-size':11},axisDate.format(new Date(t)));
+  }
   for(const s of series){const clean=s.data.filter(p=>Number.isFinite(p.value)&&safeDate(p.date)).sort((a,b)=>a.date.localeCompare(b.date));
     if(!clean.length)continue;
     const path=clean.map((p,i)=>(i===0?'M':'L')+X(p.date).toFixed(2)+','+Y(p.value).toFixed(2)).join(' ');
@@ -380,7 +387,7 @@ function lineChart(id,series,unit){
 }
 function workoutWeeklySeries(){
   const exercise=$('exercise-filter').value,metric=$('workout-metric').value;
-  const native=workouts.filter(r=>r.name===exercise);
+  const native=workouts.filter(r=>r.name===exercise&&!String(r.variation||'').trim());
   const nativeWeeks=new Set(native.map(r=>startOfWeek(r.date)));
   const hist=historyWorkouts.filter(r=>r.name===exercise&&r.comparable&&Number.isFinite(r.weight)&&!nativeWeeks.has(startOfWeek(r.date)));
   const groups=new Map();
@@ -396,8 +403,12 @@ function workoutWeeklySeries(){
 function renderCharts(){
   if(activePage==='dashboard'){
     lineChart('dash-weight-chart',[
-      {name:'Napi testsúly',color:'#64e1d0',data:weights.map(r=>({date:r.date,value:r.weight}))},
       {name:'Heti átlag',color:'#a4a0ff',data:combinedWeeklyWeights().map(r=>({date:r.date,value:r.average}))}
+    ],'kg');
+    const latest=weights.at(-1)?.date||null;
+    const first=latest?plusDays(latest,-20):null;
+    lineChart('dash-daily-chart',[
+      {name:'Napi testsúly',color:'#64e1d0',data:weights.filter(r=>!first||r.date>=first).map(r=>({date:r.date,value:r.weight}))}
     ],'kg');
     const m=$('dash-body-metric').value;
     const native=m==='bmi'?weights.map(r=>({date:r.date,value:bmi(r.weight,profile.height)})):
@@ -652,6 +663,7 @@ async function init(){
   $('create-plan-form').addEventListener('submit',onCreatePlan);$('add-exercise-form').addEventListener('submit',onAddPlanExercise);
   $('plan-session-form').addEventListener('submit',onSavePlanSession);$('clear-plan-session').addEventListener('click',clearPlanSession);
   $('plan-select').addEventListener('change',e=>{selectedPlanId=e.target.value;renderPlans();});
+  $('plan-settings-select').addEventListener('change',e=>{selectedPlanId=e.target.value;renderPlans();});
   $('plan-session-date').addEventListener('change',renderPlanSession);
   $('rename-plan').addEventListener('click',onRenamePlan);$('delete-plan').addEventListener('click',onDeletePlan);
   $('weight-reset').addEventListener('click',resetWeightForm);$('measure-reset').addEventListener('click',resetMeasureForm);$('workout-reset').addEventListener('click',resetWorkoutForm);
