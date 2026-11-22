@@ -74,3 +74,10 @@ body.calendar-open{overflow:hidden}
 .calendar-bottom{margin-top:14px;justify-content:flex-end}
 .calendar-bottom button{padding:9px 16px}
 @media(max-width:355px){.calendar-dialog{padding:13px 9px}.calendar-controls{gap:4px}.calendar-controls #calendar-year{flex:0 0 75px}.calendar-day{min-height:36px}}
+
+/* v1.4: Excel import és heti archívum */
+#weekly-workout-history summary{font-weight:750;color:#d9edf4;cursor:pointer;padding:5px 0 11px}
+#weekly-workout-history[open] summary{color:#62dfcd}
+#weekly-workout-history .table-wrap{margin-top:12px}
+#history-body-table td,#history-workouts-table td{vertical-align:top}
+#history-import-status{line-height:1.6}
