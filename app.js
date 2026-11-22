@@ -475,7 +475,7 @@ function download(name,content,mime){
   const blob=new Blob([content],{type:mime});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 function exportJSON(){
-  const contents={app:'FitNapló',schemaVersion:2,exportedAt:new Date().toISOString(),profile,weights,measurements,workouts,plans};
+  const contents={app:'FitNapló',schemaVersion:3,exportedAt:new Date().toISOString(),profile,weights,measurements,workouts,plans,historyBody,historyWorkouts};
   download('fitnaplo-mentes-'+today()+'.json',JSON.stringify(contents,null,2),'application/json;charset=utf-8');notify('Biztonsági mentés letöltése elindítva.');
 }
 function exportCSV(){
@@ -484,13 +484,15 @@ function exportCSV(){
   for(const r of weights)rows.push(['testsuly',r.date,'',r.weight,'','','',bmi(r.weight,profile.height),'','','','','','']);
   for(const r of measurements)rows.push(['korfogat',r.date,'','',r.neck,r.waist,r.hip??'','',navyFat(profile.sex,profile.height,r.neck,r.waist,r.hip),'','','','','']);
   for(const r of workouts)rows.push(['edzes',r.date,r.name,'','','','','','',r.sets,r.reps,r.weight,volume(r),r.note||'']);
+  for(const r of historyBody)rows.push(['heti_excel',r.date,r.weekLabel,r.average,r.neck??'',r.waist,'','','','','','','','Heti átlag, nem napi mérés']);
+  for(const r of historyWorkouts)rows.push(['heti_edzes_excel',r.date,r.name,'','','','','','',r.sets??'',r.reps??'',r.weight??'',r.comparable?r.sets*r.reps*r.weight*(r.pairCount||1):'',r.weekLabel+' · '+r.day+' · '+r.raw+' · '+(r.note||'')]);
   const escapeCell=v=>{let s=v===null||v===undefined?'':typeof v==='number'?String(v).replace('.',','):String(v);return '"'+s.replaceAll('"','""')+'"';};
   download('fitnaplo-tablazat-'+today()+'.csv','\uFEFF'+rows.map(row=>row.map(escapeCell).join(';')).join('\r\n'),'text/csv;charset=utf-8');notify('CSV exportálás elindítva.');
 }
 function validateBackup(data){
-  if(!data||data.app!=='FitNapló'||![1,2].includes(data.schemaVersion))throw Error('Nem kompatibilis FitNapló-mentés.');
+  if(!data||data.app!=='FitNapló'||![1,2,3].includes(data.schemaVersion))throw Error('Nem kompatibilis FitNapló-mentés.');
   if(!['weights','measurements','workouts'].every(k=>Array.isArray(data[k])&&data[k].length<=200000))throw Error('Érvénytelen vagy túl nagy mentés.');
-  if(data.schemaVersion===2&&(!Array.isArray(data.plans)||data.plans.length>25))throw Error('Hibás edzésterv-mentés.');
+  if(data.schemaVersion>=2&&(!Array.isArray(data.plans)||data.plans.length>25))throw Error('Hibás edzésterv-mentés.');
   const p=data.profile;if(!p||!['male','female'].includes(p.sex))throw Error('Hiányzó vagy hibás profil.');
   if(p.height!==null)validRange(p.height,100,250,'Magasság');
   if(p.goal!==null&&p.goal!==undefined)validRange(p.goal,20,400,'Cél');
@@ -504,10 +506,15 @@ function validateBackup(data){
     planIds.add(p.id);const exerciseIds=new Set(),exerciseNames=new Set();
     const exercises=p.exercises.map(x=>{
       if(typeof x.id!=='string'||!x.id||exerciseIds.has(x.id)||typeof x.name!=='string'||!x.name.trim()||x.name.length>90||exerciseNames.has(x.name.trim().toLocaleLowerCase('hu-HU')))throw Error('Hibás edzésterv-gyakorlat.');
-      exerciseIds.add(x.id);exerciseNames.add(x.name.trim().toLocaleLowerCase('hu-HU'));return {id:x.id,name:x.name.trim()};
-    });cleanPlans.push({id:p.id,name:p.name.trim(),exercises});
+      exerciseIds.add(x.id);exerciseNames.add(x.name.trim().toLocaleLowerCase('hu-HU'));return {id:x.id,name:x.name.trim(),muscles:String(x.muscles||'').slice(0,150),prescription:String(x.prescription||'').slice(0,120),rest:String(x.rest||'').slice(0,90),sets:x.sets??null,reps:x.reps??null};
+    });cleanPlans.push({id:p.id,name:p.name.trim(),exercises,cardio:String(p.cardio||'').slice(0,500)});
   }
-  return {plans:cleanPlans,profile:{id:'main',sex:p.sex,height:p.height??null,goal:p.goal??null,name:String(p.name||'').slice(0,50)},weights:data.weights.map(({date,weight})=>({date,weight,bmi:bmi(weight,p.height)})),measurements:data.measurements.map(({date,neck,waist,hip})=>({date,neck,waist,hip:hip??null,bodyFatPercent:navyFat(p.sex,p.height,neck,waist,hip)})),workouts:data.workouts.map(({id,date,name,sets,reps,weight,note,planId,exerciseId})=>({id,date,name,sets,reps,weight,note:String(note||'').slice(0,180),...(typeof planId==='string'&&typeof exerciseId==='string'?{planId,exerciseId}:{})}))};
+  const hBody=data.schemaVersion===3?data.historyBody:[],hWorkout=data.schemaVersion===3?data.historyWorkouts:[];
+  if(!Array.isArray(hBody)||hBody.length>10000||!Array.isArray(hWorkout)||hWorkout.length>100000)throw Error('Hibás történeti mentés.');
+  const knownDates=new Set(),knownIds=new Set();
+  for(const r of hBody){if(!safeDate(r.date)||knownDates.has(r.date))throw Error('Hibás importált heti dátum.');knownDates.add(r.date);validRange(r.average,20,400,'Heti átlag');validRange(r.waist,30,250,'Derék');if(r.neck!==null)validRange(r.neck,20,80,'Nyak');}
+  for(const r of hWorkout){if(typeof r.id!=='string'||!r.id||knownIds.has(r.id)||!safeDate(r.date)||typeof r.name!=='string'||!r.name.trim())throw Error('Hibás történeti edzés.');knownIds.add(r.id);if(r.weight!==null)validRange(r.weight,0,1000,'Edzéssúly');}
+  return {historyBody:hBody,historyWorkouts:hWorkout,plans:cleanPlans,profile:{id:'main',sex:p.sex,height:p.height??null,goal:p.goal??null,name:String(p.name||'').slice(0,50)},weights:data.weights.map(({date,weight})=>({date,weight,bmi:bmi(weight,p.height)})),measurements:data.measurements.map(({date,neck,waist,hip})=>({date,neck,waist,hip:hip??null,bodyFatPercent:navyFat(p.sex,p.height,neck,waist,hip)})),workouts:data.workouts.map(({id,date,name,sets,reps,weight,note,planId,exerciseId})=>({id,date,name,sets,reps,weight,note:String(note||'').slice(0,180),...(typeof planId==='string'&&typeof exerciseId==='string'?{planId,exerciseId}:{})}))};
 }
 async function restoreJSON(){
   try{
@@ -520,7 +527,7 @@ async function restoreJSON(){
       const tx=db.transaction(STORE_NAMES,'readwrite');
       for(const store of STORE_NAMES)tx.objectStore(store).clear();
       tx.objectStore('profile').put(backup.profile);
-      for(const name of ['weights','measurements','workouts','plans'])for(const row of backup[name])tx.objectStore(name).put(row);
+      for(const name of ['weights','measurements','workouts','plans','historyBody','historyWorkouts'])for(const row of backup[name])tx.objectStore(name).put(row);
       tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Visszaállítás megszakítva.'));
     });
     $('import-file').value='';await refreshData();notify('Mentés sikeresen visszaállítva.');
@@ -564,7 +571,7 @@ async function init(){
   $('weight-reset').addEventListener('click',resetWeightForm);$('measure-reset').addEventListener('click',resetMeasureForm);$('workout-reset').addEventListener('click',resetWorkoutForm);
   document.addEventListener('click',onTableClick);
   $('dash-body-metric').addEventListener('change',renderCharts);$('exercise-filter').addEventListener('change',renderCharts);$('workout-metric').addEventListener('change',renderCharts);
-  $('export-json').addEventListener('click',exportJSON);$('export-csv').addEventListener('click',exportCSV);$('restore-json').addEventListener('click',restoreJSON);
+  $('export-json').addEventListener('click',exportJSON);$('export-csv').addEventListener('click',exportCSV);$('restore-json').addEventListener('click',restoreJSON);$('import-history-json').addEventListener('click',importHistoricalExcel);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshDatesOnNewDay();});
   window.addEventListener('focus',refreshDatesOnNewDay);
   if('ResizeObserver' in globalThis){let raf;const resize=new ResizeObserver(()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(renderCharts);});document.querySelectorAll('.chart-host').forEach(x=>resize.observe(x));}
