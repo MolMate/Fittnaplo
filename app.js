@@ -1,8 +1,8 @@
 'use strict';
 /* FitNapló v1.1 – no external libraries and no network data transfer. */
 const DB_NAME='fitnaplo-db';
-const DB_VERSION=2;
-const STORE_NAMES=['profile','weights','measurements','workouts','plans'];
+const DB_VERSION=3;
+const STORE_NAMES=['profile','weights','measurements','workouts','plans','historyBody','historyWorkouts'];
 const DEFAULT_PROFILE={id:'main',height:null,sex:'male',goal:null,name:''};
 const $=id=>document.getElementById(id);
 const decimal=v=>v===null||v===undefined||v===''?null:Number(String(v).replace(',','.'));
@@ -34,13 +34,25 @@ function navyFat(sex,height,neck,waist,hip){
 }
 const estimated1RM=r=>r.reps>=1&&r.reps<=12&&r.weight>0?r.weight*(1+r.reps/30):null;
 const volume=r=>r.sets*r.reps*r.weight;
+function combinedWeeklyWeights(){
+  const daily=weeklyWeights(weights);
+  const actualWeeks=new Set(daily.map(x=>x.week));
+  const historic=historyBody.filter(x=>!actualWeeks.has(startOfWeek(x.date))).map(x=>({
+    week:x.date,date:x.date,average:x.average,count:null,source:'Excel',weekLabel:x.weekLabel
+  }));
+  return [...daily,...historic].sort((a,b)=>a.date.localeCompare(b.date));
+}
+function recentBodyMeasurement(){
+  return [...historyBody.filter(x=>Number.isFinite(x.neck)),...measurements]
+    .sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
+}
 function weeklyWeights(rows){
   const groups=new Map();
   for(const r of rows){const week=startOfWeek(r.date);if(!groups.has(week))groups.set(week,[]);groups.get(week).push(r.weight);}
   return [...groups].map(([week,values])=>({date:week,week,average:values.reduce((a,b)=>a+b,0)/values.length,count:values.length})).sort(sortAsc);
 }
 
-let db,profile={...DEFAULT_PROFILE},weights=[],measurements=[],workouts=[],plans=[];
+let db,profile={...DEFAULT_PROFILE},weights=[],measurements=[],workouts=[],plans=[],historyBody=[],historyWorkouts=[];
 let selectedPlanId=null,lastDateRefresh=null;
 let toastTimer,activePage='dashboard';
 function notify(text){const node=$('toast');node.textContent=text;node.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>node.classList.remove('show'),3400);}
@@ -69,8 +81,8 @@ function operation(store,method,...args){
 }
 async function refreshData(){
   requireDB();
-  const [savedProfile,w,m,r,p]=await Promise.all([operation('profile','get','main'),operation('weights','getAll'),operation('measurements','getAll'),operation('workouts','getAll'),operation('plans','getAll')]);
-  profile={...DEFAULT_PROFILE,...(savedProfile||{})};weights=w.sort(sortAsc);measurements=m.sort(sortAsc);workouts=r.sort(sortAsc);plans=p.sort((a,b)=>a.name.localeCompare(b.name,'hu-HU'));render();
+  const [savedProfile,w,m,r,p,hb,hw]=await Promise.all([operation('profile','get','main'),operation('weights','getAll'),operation('measurements','getAll'),operation('workouts','getAll'),operation('plans','getAll'),operation('historyBody','getAll'),operation('historyWorkouts','getAll')]);
+  profile={...DEFAULT_PROFILE,...(savedProfile||{})};weights=w.sort(sortAsc);measurements=m.sort(sortAsc);workouts=r.sort(sortAsc);plans=p.sort((a,b)=>a.name.localeCompare(b.name,'hu-HU'));historyBody=hb.sort(sortAsc);historyWorkouts=hw.sort(sortAsc);render();
 }
 function updateMeasuredResults(){
   const h=profile.height;
@@ -114,11 +126,11 @@ function changePage(name){
 }
 function card(label,value,minor,icon){return `<div class="metric-card"><span class="mini-icon">${icon}</span><div class="label">${label}</div><div class="value">${value}</div><div class="minor">${minor}</div></div>`;}
 function renderDashboard(){
-  const latest=weights.at(-1),lastMeasure=measurements.at(-1),weeks=weeklyWeights(weights);
-  const currentWeek=startOfWeek(today()),week=weeks.find(w=>w.week===currentWeek),prev=weeks.find(w=>w.week===plusDays(currentWeek,-7));
+  const latest=weights.at(-1),lastMeasure=recentBodyMeasurement(),weeks=combinedWeeklyWeights();
+  const currentWeek=startOfWeek(today()),week=weeks.find(w=>startOfWeek(w.week)===currentWeek),prev=weeks.find(w=>startOfWeek(w.week)===plusDays(currentWeek,-7));
   const avg=week?.average;
   const delta=avg!==undefined&&prev!==undefined?avg-prev.average:null;
-  const avgNote=week?`${week.count}/7 nap · ${delta===null?'nincs előző heti adat':(delta>0?'+':'')+format(delta)+' kg előző héthez'}`:'Még nincs adat ezen a héten';
+  const avgNote=week?`${week.count===null?'Excel heti átlag':week.count+'/7 nap'} · ${delta===null?'nincs előző heti adat':(delta>0?'+':'')+format(delta)+' kg előző héthez'}`:'Még nincs adat ezen a héten';
   const latestBMI=latest?bmi(latest.weight,profile.height):null;
   const bf=lastMeasure?navyFat(profile.sex,profile.height,lastMeasure.neck,lastMeasure.waist,lastMeasure.hip):null;
   $('dashboard-cards').innerHTML=
@@ -137,6 +149,7 @@ function renderDashboard(){
   }
   rows.push(`<div class="inline-row"><span>Összes testsúlymérés</span><b>${weights.length}</b></div>`);
   rows.push(`<div class="inline-row"><span>Összes rögzített gyakorlat</span><b>${workouts.length}</b></div>`);
+  if(historyWorkouts.length)rows.push(`<div class="inline-row"><span>Excelből importált heti edzésadatok</span><b>${historyWorkouts.length}</b></div>`);
   $('week-summary').innerHTML=`<h2>Heti összefoglaló</h2><p class="hint">${dateLabel(currentWeek)} – ${dateLabel(plusDays(currentWeek,6))}</p>${rows.join('')}`;
 }
 /* Felnőttek BMI kategóriái: WHO/CDC. A testzsírtartományok történeti ACE-kategóriák, nem diagnózisok. */
@@ -178,13 +191,13 @@ function renderInterpretation(latestWeight,latestMeasure){
 
 function emptyTable(msg){return `<div class="table-empty">${escapeHTML(msg)}</div>`;}
 function renderBodyTables(){
-  const weekRows=weeklyWeights(weights).sort(sortDesc);
-  $('weekly-weight').innerHTML=weekRows.length?`<table><thead><tr><th>Hét kezdete</th><th>Mérések</th><th>Heti átlag</th></tr></thead><tbody>${weekRows.map(r=>`<tr><td>${dateLabel(r.week)}</td><td><span class="pill">${r.count}/7 nap</span></td><td>${format(r.average)} kg</td></tr>`).join('')}</tbody></table>`:emptyTable('Még nincs heti átlag. Rögzíts legalább egy testsúlyt.');
+  const weekRows=combinedWeeklyWeights().sort(sortDesc);
+  $('weekly-weight').innerHTML=weekRows.length?`<table><thead><tr><th>Hét kezdete</th><th>Mérések</th><th>Heti átlag</th></tr></thead><tbody>${weekRows.map(r=>`<tr><td>${dateLabel(r.week)}</td><td><span class="pill">${r.count===null?'Excel – heti átlag':r.count+'/7 nap'}</span></td><td>${format(r.average)} kg</td></tr>`).join('')}</tbody></table>`:emptyTable('Még nincs heti átlag. Rögzíts legalább egy testsúlyt.');
   $('weights-table').innerHTML=weights.length?`<table><thead><tr><th>Dátum</th><th>Testsúly</th><th>BMI</th><th>Művelet</th></tr></thead><tbody>${[...weights].reverse().map(r=>`<tr><td>${dateLabel(r.date)}</td><td>${format(r.weight)} kg</td><td>${format(bmi(r.weight,profile.height))}</td><td><div class="row-actions"><button class="mini-btn" data-action="edit-weight" data-id="${r.date}">Szerk.</button><button class="mini-btn delete-btn" data-action="delete-weight" data-id="${r.date}">Törlés</button></div></td></tr>`).join('')}</tbody></table>`:emptyTable('Még nincs testsúlyadat.');
   $('measures-table').innerHTML=measurements.length?`<table><thead><tr><th>Dátum</th><th>Nyak</th><th>Derék/has</th>${profile.sex==='female'?'<th>Csípő</th>':''}<th>Testzsír</th><th>Művelet</th></tr></thead><tbody>${[...measurements].reverse().map(r=>`<tr><td>${dateLabel(r.date)}</td><td>${format(r.neck)} cm</td><td>${format(r.waist)} cm</td>${profile.sex==='female'?`<td>${format(r.hip)} cm</td>`:''}<td>${format(navyFat(profile.sex,profile.height,r.neck,r.waist,r.hip))} %</td><td><div class="row-actions"><button class="mini-btn" data-action="edit-measure" data-id="${r.date}">Szerk.</button><button class="mini-btn delete-btn" data-action="delete-measure" data-id="${r.date}">Törlés</button></div></td></tr>`).join('')}</tbody></table>`:emptyTable('Még nincs körfogatmérés.');
 }
 function distinctExerciseNames(){
-  const names=new Map();for(const r of workouts){const key=r.name.trim().toLocaleLowerCase('hu-HU');if(!names.has(key))names.set(key,r.name.trim());}
+  const names=new Map();for(const r of [...workouts,...historyWorkouts.filter(x=>x.comparable&&Number.isFinite(x.weight))]){const key=r.name.trim().toLocaleLowerCase('hu-HU');if(!names.has(key))names.set(key,r.name.trim());}
   return [...names.values()].sort((a,b)=>a.localeCompare(b,'hu-HU'));
 }
 function updateExerciseSelect(){
@@ -352,31 +365,38 @@ function lineChart(id,series,unit){
 }
 function workoutWeeklySeries(){
   const exercise=$('exercise-filter').value,metric=$('workout-metric').value;
-  const items=workouts.filter(r=>r.name===exercise);
+  const native=workouts.filter(r=>r.name===exercise);
+  const nativeWeeks=new Set(native.map(r=>startOfWeek(r.date)));
+  const hist=historyWorkouts.filter(r=>r.name===exercise&&r.comparable&&Number.isFinite(r.weight)&&!nativeWeeks.has(startOfWeek(r.date)));
   const groups=new Map();
-  for(const r of items){const week=startOfWeek(r.date);if(!groups.has(week))groups.set(week,[]);groups.get(week).push(r);}
+  for(const r of native){const k=startOfWeek(r.date);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r);}
+  for(const r of hist){const k=r.date;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r);}
   return [...groups].sort(([a],[b])=>a.localeCompare(b)).map(([date,rows])=>{
-    const value=metric==='volume'?rows.reduce((sum,r)=>sum+volume(r),0):metric==='maxLoad'?Math.max(...rows.map(r=>r.weight)):
-      Math.max(...rows.map(estimated1RM).filter(Number.isFinite));
+    const value=metric==='volume'?rows.reduce((sum,r)=>sum+r.sets*r.reps*r.weight*(r.pairCount||1),0):
+      metric==='maxLoad'?Math.max(...rows.map(r=>r.weight)):Math.max(...rows.map(estimated1RM).filter(Number.isFinite));
     return {date,value:Number.isFinite(value)?value:null};
   });
 }
+
 function renderCharts(){
   if(activePage==='dashboard'){
     lineChart('dash-weight-chart',[
       {name:'Napi testsúly',color:'#64e1d0',data:weights.map(r=>({date:r.date,value:r.weight}))},
-      {name:'Heti átlag',color:'#a4a0ff',data:weeklyWeights(weights).map(r=>({date:r.week,value:r.average}))}
+      {name:'Heti átlag',color:'#a4a0ff',data:combinedWeeklyWeights().map(r=>({date:r.date,value:r.average}))}
     ],'kg');
     const m=$('dash-body-metric').value;
-    const data=m==='bmi'?weights.map(r=>({date:r.date,value:bmi(r.weight,profile.height)})):
+    const native=m==='bmi'?weights.map(r=>({date:r.date,value:bmi(r.weight,profile.height)})):
       measurements.map(r=>({date:r.date,value:m==='fat'?navyFat(profile.sex,profile.height,r.neck,r.waist,r.hip):m==='neck'?r.neck:r.waist}));
-    lineChart('dash-body-chart',[{name:m,color:'#a4a0ff',data}],m==='fat'?'%':m==='bmi'?'BMI':'cm');
+    const taken=new Set(native.map(r=>r.date));
+    const historic=historyBody.filter(r=>!taken.has(r.date)).map(r=>({date:r.date,value:m==='bmi'?bmi(r.average,profile.height):
+      m==='fat'?navyFat(profile.sex,profile.height,r.neck,r.waist,null):m==='neck'?r.neck:r.waist}));
+    lineChart('dash-body-chart',[{name:m,color:'#a4a0ff',data:[...historic,...native]}],m==='fat'?'%':m==='bmi'?'BMI':'cm');
   }
   if(activePage==='workout'){
-    const m=$('workout-metric').value;
-    lineChart('workout-chart',[{name:m,color:'#65e0cf',data:workoutWeeklySeries()}],'kg');
+    lineChart('workout-chart',[{name:$('workout-metric').value,color:'#65e0cf',data:workoutWeeklySeries()}],'kg');
   }
 }
+
 function validRange(value,min,max,name){if(!Number.isFinite(value)||value<min||value>max)throw Error(`${name}: adj meg ${min}–${max} közötti értéket.`);}
 function confirmDelete(label){return window.confirm(`Biztosan törölni szeretnéd ezt a bejegyzést?\n${label}`);}
 function resetWorkoutForm(){ $('workout-form').reset();$('workout-edit-id').value='';$('workout-date').value=today();$('workout-sets').value='3';$('workout-reps').value='8';$('workout-save').textContent='Gyakorlat mentése';syncDateControls();}
