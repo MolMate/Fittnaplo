@@ -248,20 +248,49 @@ function renderPlans(){
   if(!plan){const cardio=$('plan-cardio');if(cardio)cardio.textContent='';}
   renderPlanSession();
 }
+function previousForExercise(plan,exercise,date){
+  const nameKey=exercise.name.toLocaleLowerCase('hu-HU');
+  const isMatching=r=>r.planId===plan.id&&r.exerciseId===exercise.id||r.name?.toLocaleLowerCase('hu-HU')===nameKey;
+  const lastNative=workouts.filter(r=>r.date<date&&isMatching(r)).sort((a,b)=>b.date.localeCompare(a.date))[0];
+  const lastHistoric=historyWorkouts.filter(r=>r.date<date&&r.comparable&&Number.isFinite(r.weight)&&isMatching(r)).sort((a,b)=>b.date.localeCompare(a.date))[0];
+  if(lastNative&&lastHistoric)return lastNative.date>=lastHistoric.date?lastNative:lastHistoric;
+  return lastNative||lastHistoric||null;
+}
 function renderPlanSession(){
   const plan=activePlan(),date=$('plan-session-date').value||today(),list=$('plan-session-list');
   const submit=$('save-plan-session');
-  if(!plan){list.innerHTML=emptyTable('Először hozz létre egy edzéstervet.');submit.disabled=true;return;}
-  if(!plan.exercises.length){list.innerHTML=emptyTable('A kiválasztott tervhez még nincsenek gyakorlatok.');submit.disabled=true;return;}
+  if(!plan){list.innerHTML=emptyTable('Először válassz edzéstervet. A terveket a Beállításokban tudod létrehozni.');submit.disabled=true;return;}
+  if(!plan.exercises.length){list.innerHTML=emptyTable('Ehhez a tervhez még nincsenek gyakorlatok. A Beállításokban adhatsz hozzájuk.');submit.disabled=true;return;}
   submit.disabled=false;
   list.innerHTML=plan.exercises.map((ex,i)=>{
     const prior=workouts.find(r=>r.planId===plan.id&&r.exerciseId===ex.id&&r.date===date);
-    const recent=[...workouts].reverse().find(r=>r.name.toLocaleLowerCase('hu-HU')===ex.name.toLocaleLowerCase('hu-HU')&&r.date<date);
-    const hint=recent?`Előző alkalom (${dateLabel(recent.date)}): ${recent.sets} × ${recent.reps}, ${format(recent.weight)} kg`:'Még nincs korábbi adat';
-    return `<div class="session-exercise" data-exercise-id="${escapeHTML(ex.id)}"><div class="session-exercise-head"><span class="exercise-number">${i+1}.</span><strong>${escapeHTML(ex.name)}</strong>${prior?'<span class="saved-label">Mentett</span>':''}</div>
-    <div class="three-inputs session-fields"><div><label>Sorozat</label><input aria-label="${escapeHTML(ex.name)}: sorozatok" data-field="sets" type="number" min="1" max="30" step="1" inputmode="numeric" value="${prior?.sets??''}" placeholder="3"></div><div><label>Ismétlés / sorozat</label><input aria-label="${escapeHTML(ex.name)}: ismétlés" data-field="reps" type="number" min="1" max="100" step="1" inputmode="numeric" value="${prior?.reps??''}" placeholder="8"></div><div><label>Súly (kg)</label><input aria-label="${escapeHTML(ex.name)}: súly" data-field="weight" type="number" min="0" max="1000" step="0.5" inputmode="decimal" value="${prior?.weight??''}" placeholder="60"></div></div><div class="field-help">${hint}</div></div>`;
+    const prev=previousForExercise(plan,ex,date);
+    const when=prev?.source==='Excel'?('Excel – '+(prev.weekLabel||dateLabel(prev.date))):dateLabel(prev?.date);
+    const load=Number.isFinite(prev?.weight)?format(prev.weight)+(prev.pairCount===2?' kg/kéz':' kg'):'—';
+    const lastLine=prev?('Előző: '+when+' · '+prev.sets+' × '+prev.reps+' · '+load):'Még nincs korábbi bejegyzés ehhez a gyakorlathoz.';
+    const lastNote=prev?.variation?(' · '+prev.variation):prev?.note?(' · '+prev.note):'';
+    const target=ex.prescription||([ex.sets,ex.reps].every(Number.isFinite)?ex.sets+' × '+ex.reps:'');
+    const detailsOpen=prior?.variation||prior?.note?' open':'';
+    const weight=prior?.weight??'',sets=prior?.sets??'',reps=prior?.reps??'';
+    return `<article class="session-exercise" data-exercise-id="${escapeHTML(ex.id)}">
+      <div class="session-exercise-head"><span class="exercise-number">${i+1}.</span><strong>${escapeHTML(ex.name)}</strong>${prior?'<span class="saved-label">Mentve</span>':''}</div>
+      ${target?`<div class="exercise-target">Terv: ${escapeHTML(target)}</div>`:''}
+      <div class="previous-result"><span>${escapeHTML(lastLine+lastNote)}</span>${prev?'<button type="button" class="mini-btn" data-session-action="copy">Átveszem</button>':''}</div>
+      <div class="three-inputs session-fields">
+        <div><label>Sorozat</label><input aria-label="${escapeHTML(ex.name)} sorozat" data-field="sets" type="number" min="1" max="30" step="1" inputmode="numeric" value="${sets}" placeholder="${Number.isInteger(ex.sets)?ex.sets:3}"></div>
+        <div><label>Ismétlés</label><input aria-label="${escapeHTML(ex.name)} ismétlés" data-field="reps" type="number" min="1" max="100" step="1" inputmode="numeric" value="${reps}" placeholder="${Number.isInteger(ex.reps)?ex.reps:8}"></div>
+        <div><label>Súly (kg)</label><input aria-label="${escapeHTML(ex.name)} súly kg" data-field="weight" type="number" min="0" max="1000" step="0.5" inputmode="decimal" value="${weight}" placeholder="kg"></div>
+      </div>
+      <details class="exercise-notes"${detailsOpen}><summary>Másik gép / helyettesítés / megjegyzés ${prior?.variation||prior?.note?'•':''}</summary>
+        <label>Eltérő gép vagy helyettesítő gyakorlat</label><input type="text" maxlength="120" data-field="variation" aria-label="${escapeHTML(ex.name)} gép vagy helyettesítés" placeholder="pl. másik mellnyomó gép" value="${escapeHTML(prior?.variation||'')}">
+        <label>Megjegyzés</label><input type="text" maxlength="180" data-field="note" aria-label="${escapeHTML(ex.name)} megjegyzés" placeholder="pl. könnyű volt, más fogásszélesség" value="${escapeHTML(prior?.note||'')}">
+        <p class="field-help">A megjelölt helyettesítést tároljuk, de nem keverjük az eredeti gyakorlat súlytrendjébe.</p>
+      </details>
+      <div class="session-card-actions"><button type="button" class="primary" data-session-action="save">Gyakorlat mentése</button></div>
+    </article>`;
   }).join('');
 }
+
 async function storePlan(plan){await operation('plans','put',plan);await refreshData();}
 async function onCreatePlan(e){
   e.preventDefault();try{
@@ -302,32 +331,70 @@ async function onPlanExerciseAction(action,id){
     await storePlan({...plan,exercises});
   }catch(err){showError(err);}
 }
-async function onSavePlanSession(e){
-  e.preventDefault();try{
-    const plan=activePlan(),date=$('plan-session-date').value;if(!plan)throw Error('Először válassz edzéstervet.');
-    if(!safeDate(date))throw Error('Érvénytelen edzésdátum.');
-    const rows=[];
-    for(const node of $('plan-session-list').querySelectorAll('.session-exercise')){
-      const exercise=plan.exercises.find(x=>x.id===node.dataset.exerciseId);if(!exercise)continue;
-      const values=Object.fromEntries(['sets','reps','weight'].map(f=>[f,node.querySelector(`[data-field="${f}"]`).value.trim()]));
-      if(Object.values(values).every(v=>v===''))continue;
-      if(Object.values(values).some(v=>v===''))throw Error(`${exercise.name}: töltsd ki mindhárom mezőt, vagy hagyd üresen a sort.`);
-      const sets=decimal(values.sets),reps=decimal(values.reps),weight=decimal(values.weight);
-      validRange(sets,1,30,'Sorozat');validRange(reps,1,100,'Ismétlés');validRange(weight,0,1000,'Súly');
-      if(!Number.isInteger(sets)||!Number.isInteger(reps))throw Error(`${exercise.name}: sorozat és ismétlés csak egész szám lehet.`);
-      const id=`plan:${plan.id}:${date}:${exercise.id}`;
-      rows.push({id,date,name:exercise.name,sets,reps,weight,note:'',planId:plan.id,exerciseId:exercise.id});
+async function savePlanSession(exerciseId=null){
+  const plan=activePlan(),date=$('plan-session-date').value;
+  if(!plan)throw Error('Válassz edzéstervet.');
+  if(!safeDate(date))throw Error('Érvénytelen edzésdátum.');
+  const rows=[];
+  for(const node of $('plan-session-list').querySelectorAll('.session-exercise')){
+    if(exerciseId&&node.dataset.exerciseId!==exerciseId)continue;
+    const ex=plan.exercises.find(x=>x.id===node.dataset.exerciseId);if(!ex)continue;
+    const values=Object.fromEntries(['sets','reps','weight'].map(key=>[key,node.querySelector('[data-field="'+key+'"]')?.value.trim()||'']));
+    const note=node.querySelector('[data-field="note"]')?.value.trim()||'';
+    const variation=node.querySelector('[data-field="variation"]')?.value.trim()||'';
+    if(Object.values(values).every(v=>!v)){
+      if(exerciseId||note||variation)throw Error(ex.name+': add meg a sorozatot, ismétlést és súlyt.');
+      continue;
     }
-    if(!rows.length)throw Error('Legalább egy gyakorlat adatait töltsd ki.');
-    requireDB();await new Promise((resolve,reject)=>{
-      const tx=db.transaction(['workouts'],'readwrite');for(const row of rows)tx.objectStore('workouts').put(row);
-      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Edzés nem menthető.'));
-    });
-    await refreshData();notify(`${rows.length} gyakorlat mentve erre a napra: ${dateLabel(date)}.`);
-  }catch(err){showError(err);}
+    if(Object.values(values).some(v=>!v))throw Error(ex.name+': töltsd ki mindhárom számértéket.');
+    const sets=decimal(values.sets),reps=decimal(values.reps),weight=decimal(values.weight);
+    validRange(sets,1,30,'Sorozat');validRange(reps,1,100,'Ismétlés');validRange(weight,0,1000,'Súly');
+    if(!Number.isInteger(sets)||!Number.isInteger(reps))throw Error(ex.name+': a sorozat és ismétlés egész szám legyen.');
+    const id='plan:'+plan.id+':'+date+':'+ex.id;
+    const existing=workouts.find(row=>row.id===id);
+    rows.push({...existing,id,date,name:ex.name,sets,reps,weight,note,variation,planId:plan.id,exerciseId:ex.id});
+  }
+  if(!rows.length)throw Error('Először tölts ki legalább egy gyakorlatot.');
+  requireDB();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction('workouts','readwrite');
+    for(const row of rows)tx.objectStore('workouts').put(row);
+    tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Edzés mentése sikertelen.'));
+  });
+  await refreshData();
+  notify(rows.length===1?'Gyakorlat mentve.':rows.length+' gyakorlat mentve erre a napra.');
 }
+async function onSavePlanSession(e){
+  e.preventDefault();try{await savePlanSession();}catch(err){showError(err);}
+}
+function onPlanSessionClick(e){
+  const action=e.target.closest('button[data-session-action]');if(!action)return;
+  const node=action.closest('.session-exercise');if(!node)return;
+  const ex=activePlan()?.exercises.find(x=>x.id===node.dataset.exerciseId);
+  if(!ex)return;
+  if(action.dataset.sessionAction==='copy'){
+    const latest=previousForExercise(activePlan(),ex,$('plan-session-date').value);
+    if(!latest)return;
+    for(const key of ['sets','reps','weight']){
+      const field=node.querySelector('[data-field="'+key+'"]');
+      if(field)field.value=latest[key]??'';
+    }
+    notify('Az előző számértékeket átvetted. Ellenőrizd a gépet és a terhelést!');
+  }else if(action.dataset.sessionAction==='save'){
+    savePlanSession(ex.id).catch(showError);
+  }
+}
+
 function clearPlanSession(){
-  for(const el of $('plan-session-list').querySelectorAll('input'))el.value='';
+  const plan=activePlan(),date=$('plan-session-date').value;
+  for(const node of $('plan-session-list').querySelectorAll('.session-exercise')){
+    const prior=workouts.find(r=>r.planId===plan?.id&&r.exerciseId===node.dataset.exerciseId&&r.date===date);
+    for(const field of node.querySelectorAll('input[data-field]')){
+      const key=field.dataset.field;
+      field.value=prior?.[key]??'';
+    }
+  }
+  notify('A nem mentett módosításokat visszaállítottam.');
 }
 
 function showSexFields(){
@@ -662,6 +729,7 @@ async function init(){
   $('workout-form').addEventListener('submit',onWorkoutSubmit);$('profile-form').addEventListener('submit',onProfileSubmit);
   $('create-plan-form').addEventListener('submit',onCreatePlan);$('add-exercise-form').addEventListener('submit',onAddPlanExercise);
   $('plan-session-form').addEventListener('submit',onSavePlanSession);$('clear-plan-session').addEventListener('click',clearPlanSession);
+  $('plan-session-list').addEventListener('click',onPlanSessionClick);
   $('plan-select').addEventListener('change',e=>{selectedPlanId=e.target.value;renderPlans();});
   $('plan-settings-select').addEventListener('change',e=>{selectedPlanId=e.target.value;renderPlans();});
   $('plan-session-date').addEventListener('change',renderPlanSession);
