@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.4">
+  <link rel="stylesheet" href="styles.css?v=1.5">
   <title>FitNapló – Személyes fejlődéskövető</title>
 </head>
 <body>
@@ -26,7 +26,7 @@
         <div class="heading"><div><div class="eyebrow">ÁTTEKINTÉS</div><h1>Fejlődésed</h1><p class="hint">A napi mérésekből heti átlagok, az edzésekből teljesítménymutatók készülnek.</p></div></div>
         <div class="metric-grid" id="dashboard-cards"></div>
         <div id="dashboard-interpretation" class="explanation-grid"></div>
-        <div class="panel chart-panel"><div class="panel-head"><div><h2>Testsúly alakulása</h2><p>Napi értékek és heti átlagok, beleértve az importált heteket is</p></div></div><div id="dash-weight-chart" class="chart-host"></div><div class="legend"><span><i class="legend-dot aqua"></i> Napi</span><span><i class="legend-dot violet"></i> Heti átlag</span></div></div>
+        <div class="panel chart-panel"><div class="panel-head"><div><h2>Heti testsúlyátlag</h2><p>Hosszú távú trend – a korábbi Excel-adatokkal együtt</p></div></div><div id="dash-weight-chart" class="chart-host"></div><div class="legend"><span><i class="legend-dot violet"></i> Heti átlag</span></div></div><div class="panel chart-panel"><div class="panel-head"><div><h2>Napi testsúly</h2><p>Az utolsó 21 nap mérései, külön időtengelyen</p></div></div><div id="dash-daily-chart" class="chart-host"></div><div class="legend"><span><i class="legend-dot aqua"></i> Napi mérés</span></div></div>
         <div class="panel chart-panel"><div class="panel-head"><div><h2>Testösszetétel</h2><p>Válaszd ki a megjelenített mérőszámot</p></div><select id="dash-body-metric" aria-label="Testösszetétel grafikon mutató"><option value="fat">Becsült testzsír (%)</option><option value="waist">Derék / has (cm)</option><option value="neck">Nyak (cm)</option><option value="bmi">BMI</option></select></div><div id="dash-body-chart" class="chart-host"></div></div>
         <div class="panel" id="week-summary"></div>
       </section>
@@ -55,37 +55,25 @@
       </section>
 
       <section id="page-workout" class="page" aria-label="Edzésnapló">
-        <div class="heading"><div><div class="eyebrow">EDZÉSNAPLÓ</div><h1>Erő és teljesítmény</h1><p class="hint">Állíts össze állandó edzésterveket, majd az edzésnapon csak a súlyt, sorozatokat és ismétléseket add meg.</p></div></div>
-        <div class="panel" id="plans-panel">
-          <div class="panel-head"><div><h2>Edzéstervek kezelése</h2><p>Készíts például „A nap – felsőtest” vagy „B nap – láb” tervet. A gyakorlatok a tervben rögzítve maradnak.</p></div></div>
-          <div class="plan-picker">
-            <div><label for="plan-select">Aktív edzésterv</label><select id="plan-select"><option value="">Még nincs edzésterv</option></select></div>
-            <form id="create-plan-form"><label for="new-plan-name">Új edzésterv létrehozása</label><div class="inline-field"><input id="new-plan-name" maxlength="70" required placeholder="pl. A nap – felsőtest"><button type="submit" class="primary">Létrehozás</button></div></form>
-          </div>
-          <div id="plan-config" class="hidden">
-            <div class="divider-line"></div>
-            <div class="plan-name-row"><div><label for="plan-name">Terv neve</label><input id="plan-name" maxlength="70"></div><button type="button" id="rename-plan">Átnevezés</button><button type="button" id="delete-plan" class="danger-button">Terv törlése</button></div>
-            <h3 class="subheading">Rögzített gyakorlatok</h3>
-            <div id="plan-exercise-list" class="plan-exercises"></div><p class="field-help" id="plan-cardio"></p>
-            <form id="add-exercise-form"><label for="new-plan-exercise">Gyakorlat hozzáadása a tervhez</label><div class="inline-field"><input required id="new-plan-exercise" maxlength="90" placeholder="pl. Fekvenyomás"><button class="primary" type="submit">Hozzáadás</button></div></form>
-            <p class="field-help">Gyakorlat eltávolítása vagy terv törlése nem törli a már korábban rögzített edzéseidet.</p>
-          </div>
-        </div>
+        <div class="heading"><div><div class="eyebrow">EDZÉSNAPLÓ</div><h1>Mai edzés</h1><p class="hint">Válassz edzéstervet, kövesd az előző eredményt, és mentsd a mai teljesítményedet. A terveket a Beállításokban módosíthatod.</p></div></div>
         <form class="panel" id="plan-session-form">
-          <div class="panel-head"><div><h2>Mai edzés rögzítése a tervből</h2><p>A kiválasztott terv gyakorlatainak neve állandó. Egy sorban azonos súllyal és ismétlésszámmal végzett sorozatok szerepelnek.</p></div></div>
-          <div class="session-date-row"><div><label for="plan-session-date-button">Edzés dátuma</label><div class="date-control"><button type="button" class="date-trigger" id="plan-session-date-button" data-date-for="plan-session-date" aria-label="Dátum kiválasztása"><span class="date-control-value">Válassz dátumot</span><span class="date-chevron" aria-hidden="true">▦</span></button><input type="hidden" id="plan-session-date" data-calendar-date-value></div></div><p class="field-help">Korábbi dátumot választva a mentett értékeket is szerkesztheted.</p></div>
+          <div class="panel-head"><div><h2>Edzés naplózása</h2><p>Válaszd ki a tervet, és írd be a tényleges sorozatokat, ismétléseket és súlyokat. Az előző eredmény minden gyakorlatnál látható.</p></div></div>
+          <div class="session-main-controls">
+            <div><label for="plan-select">Mai edzésterv</label><select id="plan-select"><option value="">Válassz edzéstervet</option></select></div>
+            <div><label for="plan-session-date-button">Edzés dátuma</label><div class="date-control"><button type="button" class="date-trigger" id="plan-session-date-button" data-date-for="plan-session-date" aria-label="Edzés dátumának kiválasztása"><span class="date-control-value">Válassz dátumot</span><span class="date-chevron" aria-hidden="true">▦</span></button><input type="hidden" id="plan-session-date" data-calendar-date-value></div></div>
+          </div>
           <div id="plan-session-list"></div>
-          <div class="form-actions"><button class="primary" type="submit" id="save-plan-session">Kitöltött gyakorlatok mentése</button><button type="button" class="quiet" id="clear-plan-session">Mezők törlése</button></div>
-          <p class="field-help">A hiánytalanul kitöltött sorok mentődnek, az üreseket kihagyjuk. Ha a korábban mentett gyakorlatot törölnéd, az Edzéselőzmények táblázatban teheted meg.</p>
+          <div class="form-actions"><button type="submit" class="primary" id="save-plan-session">Kitöltött gyakorlatok mentése</button><button type="button" class="quiet" id="clear-plan-session">Nem mentett mezők törlése</button></div>
+          <p class="field-help">A gyakorlatokat külön is mentheted. Másik gép vagy helyettesítő gyakorlat esetén a részleteknél jegyezd fel az eltérést, hogy az előző teljesítmény értelmezhető maradjon.</p>
         </form>
-        <form class="panel" id="workout-form"><div class="panel-head"><div><h2>Egyedi gyakorlat rögzítése</h2><p>Edzésterven kívüli vagy eltérő sorozatcsoport külön mentéséhez. Egy bejegyzés egy azonos súllyal és ismétlésszámmal végzett sorozatcsoportot jelent.</p></div></div>
+        <details class="panel extra-workout-details" id="extra-workout-details"><summary>+ Egyedi gyakorlat vagy más sorozatcsoport</summary><form id="workout-form"><div class="panel-head"><div><h2>Egyedi gyakorlat rögzítése</h2><p>Edzésterven kívüli vagy eltérő sorozatcsoport külön mentéséhez. Egy bejegyzés egy azonos súllyal és ismétlésszámmal végzett sorozatcsoportot jelent.</p></div></div>
           <input type="hidden" id="workout-edit-id">
           <div class="two-inputs"><div><label for="workout-date-button">Edzés dátuma</label><div class="date-control"><button type="button" class="date-trigger" id="workout-date-button" data-date-for="workout-date" aria-label="Dátum kiválasztása"><span class="date-control-value">Válassz dátumot</span><span class="date-chevron" aria-hidden="true">▦</span></button><input type="hidden" id="workout-date" data-calendar-date-value></div></div><div><label for="workout-name">Gyakorlat neve</label><input type="text" required maxlength="90" id="workout-name" list="exercise-suggestions" placeholder="pl. Fekvenyomás"><datalist id="exercise-suggestions"></datalist></div></div>
           <div class="three-inputs"><div><label for="workout-sets">Sorozat</label><input required type="number" id="workout-sets" min="1" max="30" step="1" value="3"></div><div><label for="workout-reps">Ismétlés / sorozat</label><input required type="number" id="workout-reps" min="1" max="100" step="1" value="8"></div><div><label for="workout-load">Súly (kg)</label><input required type="number" id="workout-load" min="0" max="1000" step="0.5" placeholder="pl. 60" inputmode="decimal"></div></div>
-          <label for="workout-note">Megjegyzés (opcionális)</label><input id="workout-note" type="text" maxlength="180" placeholder="pl. utolsó sorozat nehéz volt">
+          <label for="workout-variation">Eltérő gép / helyettesítés (opcionális)</label><input id="workout-variation" type="text" maxlength="120" placeholder="pl. másik gép, kézisúlyzó"><label for="workout-note">Megjegyzés (opcionális)</label><input id="workout-note" type="text" maxlength="180" placeholder="pl. utolsó sorozat nehéz volt">
           <p class="field-help">A volumen = sorozat × ismétlés × megadott súly. Testsúlyos gyakorlatnál csak a beírt terheléssel számolunk.</p>
           <div class="form-actions"><button class="primary" id="workout-save" type="submit">Gyakorlat mentése</button><button type="button" class="quiet" id="workout-reset">Új bejegyzés</button></div>
-        </form>
+        </form></details>
         <div class="panel chart-panel"><div class="panel-head"><div><h2>Edzésfejlődés</h2><p>Heti összesítés egy kiválasztott gyakorlathoz</p></div></div><div class="filter-bar"><div><label for="exercise-filter">Gyakorlat</label><select id="exercise-filter"></select></div><div><label for="workout-metric">Mutató</label><select id="workout-metric"><option value="maxLoad">Heti legnagyobb súly (kg)</option><option value="volume">Heti volumen (kg)</option><option value="estimated1rm">Becsült 1RM (kg)</option></select></div></div><div class="chart-host" id="workout-chart"></div><p class="field-help">Becsült 1RM (Epley): súly × (1 + ismétlés / 30), kizárólag 1–12 ismétlésnél. Nem tényleges maximumteszt.</p></div>
         <div class="panel"><div class="panel-head"><div><h2>Edzéselőzmények</h2><p>Az egyes sorok szerkeszthetők vagy törölhetők.</p></div></div><div class="table-wrap" id="workouts-table"></div></div>
         <div class="panel"><details id="weekly-workout-history"><summary>Excelből importált heti edzéselőzmények (részletek megnyitása)</summary><p class="hint">A hetek oszlopdátuma szerepel, nem egy bizonyított napi edzésdátum. Az eszközváltások és megjegyzések eredeti értékkel megmaradnak.</p><div class="table-wrap" id="history-workouts-table"></div></details></div>
@@ -99,6 +87,22 @@
           <p class="field-help">A profil módosítása után a korábbi mérésekből megjelenített számított mutatók is újraszámolódnak. Az eredeti mért értékeket nem változtatjuk meg.</p>
           <button class="primary" type="submit">Profil mentése</button>
         </form>
+        <div class="panel" id="plans-panel">
+          <div class="panel-head"><div><h2>Edzéstervek szerkesztése</h2><p>Hozz létre és módosíts állandó edzésterveket. A napi naplózás az Edzés menüpontban található.</p></div></div>
+          <div class="plan-picker">
+            <div><label for="plan-settings-select">Szerkesztendő edzésterv</label><select id="plan-settings-select"><option value="">Még nincs edzésterv</option></select></div>
+            <form id="create-plan-form"><label for="new-plan-name">Új edzésterv létrehozása</label><div class="inline-field"><input id="new-plan-name" maxlength="70" required placeholder="pl. A nap – felsőtest"><button type="submit" class="primary">Létrehozás</button></div></form>
+          </div>
+          <div id="plan-config" class="hidden">
+            <div class="divider-line"></div>
+            <div class="plan-name-row"><div><label for="plan-name">Terv neve</label><input id="plan-name" maxlength="70"></div><button type="button" id="rename-plan">Átnevezés</button><button type="button" id="delete-plan" class="danger-button">Terv törlése</button></div>
+            <h3 class="subheading">Rögzített gyakorlatok</h3>
+            <div id="plan-exercise-list" class="plan-exercises"></div><p class="field-help" id="plan-cardio"></p>
+            <form id="add-exercise-form"><label for="new-plan-exercise">Gyakorlat hozzáadása a tervhez</label><div class="inline-field"><input required id="new-plan-exercise" maxlength="90" placeholder="pl. Fekvenyomás"><button class="primary" type="submit">Hozzáadás</button></div></form>
+            <p class="field-help">Gyakorlat eltávolítása vagy terv törlése nem törli a már korábban rögzített edzéseidet.</p>
+          </div>
+        </div>
+
         <div class="panel">
           <h2>Excel-naplók egyszeri importálása</h2>
           <p class="hint">A Súly.xlsx és az Edzésterv és Súlynapló.xlsx alapján elkészített importfájlt itt tudod beolvasni. A program csak az új bejegyzéseket adja hozzá, a már meglévőket nem írja felül.</p>
@@ -109,7 +113,7 @@
         </div>
         <div class="panel"><h2>Biztonsági mentés</h2><p class="hint">A napló kizárólag a készülék helyi IndexedDB-adatbázisában van. Nincs automatikus szinkronizálás, és a böngészőadatok elveszhetnek.</p><div class="form-actions"><button type="button" id="export-json" class="primary">Teljes mentés (.json)</button><button type="button" id="export-csv">Táblázatok (.csv)</button></div><div class="divider-line"></div><label for="import-file">Korábbi mentés visszaállítása (.json)</label><input id="import-file" type="file" accept=".json,application/json"><p class="field-help danger-text">A visszaállítás a jelenlegi helyi adatokat lecseréli. Mielőtt ezt használod, készíts friss biztonsági mentést.</p><button type="button" id="restore-json">Mentés visszaállítása</button></div>
         <div class="panel"><h2>A számítások értelmezése</h2><p class="hint"><b>BMI</b> = testsúly (kg) / testmagasság² (m²). Nem különbözteti meg a zsírtömeget az izomtömegtől.</p><p class="hint"><b>US Navy-testzsírbecslés:</b> férfiaknál has- és nyakkörfogatból, nőknél derék-, csípő- és nyakkörfogatból, valamint testmagasságból számol. A számítások az eredeti, hüvelykben felírt regressziós képletet használják, ezért a centimétereket 2,54-gyel osztjuk.</p><p class="hint">A becsült testzsírszázalék mérési hibára érzékeny. Különösen a hosszabb távú változás, és nem egyetlen eredmény értelmezendő.</p><p class="field-help">A részletes mérési leírás a README.md fájlban található.</p></div>
-        <div class="panel"><h2>Alkalmazásinformáció</h2><p class="hint">FitNapló 1.4 · Offline-first PWA · Helyi IndexedDB · Nincs követőkód vagy felhős adatküldés.</p><p class="hint" id="storage-status">Adatbázis ellenőrzése…</p></div>
+        <div class="panel"><h2>Alkalmazásinformáció</h2><p class="hint">FitNapló 1.5 · Offline-first PWA · Helyi IndexedDB · Nincs követőkód vagy felhős adatküldés.</p><p class="hint" id="storage-status">Adatbázis ellenőrzése…</p></div>
       </section>
     </main>
     <nav class="tabbar" aria-label="Fő navigáció">
@@ -120,7 +124,7 @@
     </nav>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=1.4" defer></script>
+  <script src="app.js?v=1.5" defer></script>
   <script src="calendar.js?v=1.3" defer></script>
 </body>
 </html>
