@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=1.2">
   <title>FitNapló – Személyes fejlődéskövető</title>
 </head>
 <body>
@@ -35,12 +35,12 @@
         <div class="heading"><div><div class="eyebrow">TESTMÉRÉSEK</div><h1>Súly és körfogatok</h1><p class="hint">Rögzíts napi testsúlyt és időszakos körfogatméréseket.</p></div></div>
         <div class="two-col">
           <form class="panel" id="weight-form"><div class="panel-head"><div><h2>Testsúly rögzítése</h2><p>Napi egy adat; ugyanarra a dátumra mentve felülírható.</p></div></div>
-            <label for="weight-date">Mérés dátuma</label><input required type="date" id="weight-date">
+            <label for="weight-date">Mérés dátuma</label><div class="date-control"><span class="date-control-value" aria-hidden="true">Dátum kiválasztása</span><input required type="date" id="weight-date"></div>
             <label for="weight-value">Testsúly (kg)</label><input required type="number" id="weight-value" min="20" max="400" step="0.1" placeholder="pl. 84,5" inputmode="decimal">
             <div class="form-actions"><button class="primary" type="submit">Testsúly mentése</button><button type="button" class="quiet" id="weight-reset">Űrlap törlése</button></div>
           </form>
           <form class="panel" id="measure-form"><div class="panel-head"><div><h2>Körfogatmérés</h2><p>Javasolt hetente egyszer, azonos mérési módszerrel.</p></div></div>
-            <label for="measure-date">Mérés dátuma</label><input required type="date" id="measure-date">
+            <label for="measure-date">Mérés dátuma</label><div class="date-control"><span class="date-control-value" aria-hidden="true">Dátum kiválasztása</span><input required type="date" id="measure-date"></div>
             <div class="two-inputs"><div><label for="measure-neck">Nyakkörfogat (cm)</label><input required type="number" id="measure-neck" min="20" max="80" step="0.1" inputmode="decimal" placeholder="pl. 39"></div><div><label for="measure-waist" id="waist-label">Haskörfogat a köldöknél (cm)</label><input required type="number" id="measure-waist" min="30" max="250" step="0.1" inputmode="decimal" placeholder="pl. 90"></div></div>
             <div id="hip-row" class="hidden"><label for="measure-hip">Csípőkörfogat (cm)</label><input type="number" id="measure-hip" min="40" max="250" step="0.1" inputmode="decimal" placeholder="pl. 98"></div>
             <p class="field-help" id="measure-explain">Férfi képlet: haskörfogat a köldök magasságában, nyak közvetlenül a gége alatt.</p>
@@ -72,14 +72,14 @@
         </div>
         <form class="panel" id="plan-session-form">
           <div class="panel-head"><div><h2>Mai edzés rögzítése a tervből</h2><p>A kiválasztott terv gyakorlatainak neve állandó. Egy sorban azonos súllyal és ismétlésszámmal végzett sorozatok szerepelnek.</p></div></div>
-          <div class="session-date-row"><div><label for="plan-session-date">Edzés dátuma</label><input required type="date" id="plan-session-date"></div><p class="field-help">Korábbi dátumot választva a mentett értékeket is szerkesztheted.</p></div>
+          <div class="session-date-row"><div><label for="plan-session-date">Edzés dátuma</label><div class="date-control"><span class="date-control-value" aria-hidden="true">Dátum kiválasztása</span><input required type="date" id="plan-session-date"></div></div><p class="field-help">Korábbi dátumot választva a mentett értékeket is szerkesztheted.</p></div>
           <div id="plan-session-list"></div>
           <div class="form-actions"><button class="primary" type="submit" id="save-plan-session">Kitöltött gyakorlatok mentése</button><button type="button" class="quiet" id="clear-plan-session">Mezők törlése</button></div>
           <p class="field-help">A hiánytalanul kitöltött sorok mentődnek, az üreseket kihagyjuk. Ha a korábban mentett gyakorlatot törölnéd, az Edzéselőzmények táblázatban teheted meg.</p>
         </form>
         <form class="panel" id="workout-form"><div class="panel-head"><div><h2>Egyedi gyakorlat rögzítése</h2><p>Edzésterven kívüli vagy eltérő sorozatcsoport külön mentéséhez. Egy bejegyzés egy azonos súllyal és ismétlésszámmal végzett sorozatcsoportot jelent.</p></div></div>
           <input type="hidden" id="workout-edit-id">
-          <div class="two-inputs"><div><label for="workout-date">Edzés dátuma</label><input required type="date" id="workout-date"></div><div><label for="workout-name">Gyakorlat neve</label><input type="text" required maxlength="90" id="workout-name" list="exercise-suggestions" placeholder="pl. Fekvenyomás"><datalist id="exercise-suggestions"></datalist></div></div>
+          <div class="two-inputs"><div><label for="workout-date">Edzés dátuma</label><div class="date-control"><span class="date-control-value" aria-hidden="true">Dátum kiválasztása</span><input required type="date" id="workout-date"></div></div><div><label for="workout-name">Gyakorlat neve</label><input type="text" required maxlength="90" id="workout-name" list="exercise-suggestions" placeholder="pl. Fekvenyomás"><datalist id="exercise-suggestions"></datalist></div></div>
           <div class="three-inputs"><div><label for="workout-sets">Sorozat</label><input required type="number" id="workout-sets" min="1" max="30" step="1" value="3"></div><div><label for="workout-reps">Ismétlés / sorozat</label><input required type="number" id="workout-reps" min="1" max="100" step="1" value="8"></div><div><label for="workout-load">Súly (kg)</label><input required type="number" id="workout-load" min="0" max="1000" step="0.5" placeholder="pl. 60" inputmode="decimal"></div></div>
           <label for="workout-note">Megjegyzés (opcionális)</label><input id="workout-note" type="text" maxlength="180" placeholder="pl. utolsó sorozat nehéz volt">
           <p class="field-help">A volumen = sorozat × ismétlés × megadott súly. Testsúlyos gyakorlatnál csak a beírt terheléssel számolunk.</p>
@@ -110,6 +110,6 @@
     </nav>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=1.2" defer></script>
 </body>
 </html>
