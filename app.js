@@ -195,6 +195,12 @@ function renderBodyTables(){
   $('weekly-weight').innerHTML=weekRows.length?`<table><thead><tr><th>Hét kezdete</th><th>Mérések</th><th>Heti átlag</th></tr></thead><tbody>${weekRows.map(r=>`<tr><td>${dateLabel(r.week)}</td><td><span class="pill">${r.count===null?'Excel – heti átlag':r.count+'/7 nap'}</span></td><td>${format(r.average)} kg</td></tr>`).join('')}</tbody></table>`:emptyTable('Még nincs heti átlag. Rögzíts legalább egy testsúlyt.');
   $('weights-table').innerHTML=weights.length?`<table><thead><tr><th>Dátum</th><th>Testsúly</th><th>BMI</th><th>Művelet</th></tr></thead><tbody>${[...weights].reverse().map(r=>`<tr><td>${dateLabel(r.date)}</td><td>${format(r.weight)} kg</td><td>${format(bmi(r.weight,profile.height))}</td><td><div class="row-actions"><button class="mini-btn" data-action="edit-weight" data-id="${r.date}">Szerk.</button><button class="mini-btn delete-btn" data-action="delete-weight" data-id="${r.date}">Törlés</button></div></td></tr>`).join('')}</tbody></table>`:emptyTable('Még nincs testsúlyadat.');
   $('measures-table').innerHTML=measurements.length?`<table><thead><tr><th>Dátum</th><th>Nyak</th><th>Derék/has</th>${profile.sex==='female'?'<th>Csípő</th>':''}<th>Testzsír</th><th>Művelet</th></tr></thead><tbody>${[...measurements].reverse().map(r=>`<tr><td>${dateLabel(r.date)}</td><td>${format(r.neck)} cm</td><td>${format(r.waist)} cm</td>${profile.sex==='female'?`<td>${format(r.hip)} cm</td>`:''}<td>${format(navyFat(profile.sex,profile.height,r.neck,r.waist,r.hip))} %</td><td><div class="row-actions"><button class="mini-btn" data-action="edit-measure" data-id="${r.date}">Szerk.</button><button class="mini-btn delete-btn" data-action="delete-measure" data-id="${r.date}">Törlés</button></div></td></tr>`).join('')}</tbody></table>`:emptyTable('Még nincs körfogatmérés.');
+  const historyTable=$('history-body-table');
+  if(historyTable)historyTable.innerHTML=historyBody.length?
+    '<table><thead><tr><th>Excel dátuma</th><th>Hét</th><th>Heti átlag</th><th>Derék</th><th>Nyak</th><th>Becsült testzsír</th></tr></thead><tbody>'+
+    [...historyBody].reverse().map(r=>'<tr><td>'+dateLabel(r.date)+'</td><td>'+escapeHTML(r.weekLabel)+'</td><td>'+format(r.average,2)+' kg</td><td>'+format(r.waist)+' cm</td><td>'+format(r.neck)+' cm</td><td>'+format(navyFat(profile.sex,profile.height,r.neck,r.waist,null))+' %</td></tr>').join('')+
+    '</tbody></table>':emptyTable('Még nincsenek importált heti testmérések.');
+
 }
 function distinctExerciseNames(){
   const names=new Map();for(const r of [...workouts,...historyWorkouts.filter(x=>x.comparable&&Number.isFinite(x.weight))]){const key=r.name.trim().toLocaleLowerCase('hu-HU');if(!names.has(key))names.set(key,r.name.trim());}
@@ -212,6 +218,13 @@ function updateExerciseSelect(){
 function renderWorkouts(){
   updateExerciseSelect();
   $('workouts-table').innerHTML=workouts.length?`<table><thead><tr><th>Dátum</th><th>Gyakorlat</th><th>Sor. × ism.</th><th>Súly</th><th>Volumen</th><th>Művelet</th></tr></thead><tbody>${[...workouts].reverse().map(r=>`<tr><td>${dateLabel(r.date)}</td><td><b>${escapeHTML(r.name)}</b>${r.note?`<div class="muted small">${escapeHTML(r.note)}</div>`:''}</td><td>${r.sets} × ${r.reps}</td><td>${format(r.weight)} kg</td><td>${format(volume(r),0)} kg</td><td><div class="row-actions"><button class="mini-btn" data-action="edit-workout" data-id="${escapeHTML(r.id)}">Szerk.</button><button class="mini-btn delete-btn" data-action="delete-workout" data-id="${escapeHTML(r.id)}">Törlés</button></div></td></tr>`).join('')}</tbody></table>`:emptyTable('Még nincs edzésbejegyzés.');
+  const historyTable=$('history-workouts-table');
+  if(historyTable)historyTable.innerHTML=historyWorkouts.length?
+    '<table><thead><tr><th>Hét</th><th>Nap</th><th>Gyakorlat</th><th>Excel érték</th><th>Értelmezés</th></tr></thead><tbody>'+
+    [...historyWorkouts].reverse().map(r=>'<tr><td>'+escapeHTML(r.weekLabel)+' · '+dateLabel(r.date)+'</td><td>'+escapeHTML(r.day)+'</td><td>'+escapeHTML(r.name)+'</td><td><b>'+escapeHTML(r.raw)+'</b></td><td>'+
+       (r.comparable?(format(r.weight)+' kg'+(r.pairCount===2?' / kéz':'')+'; '+r.sets+'×'+r.reps):'<span class="pill">Nem összehasonlítható</span>')+
+       (r.note?'<div class="muted small">'+escapeHTML(r.note)+'</div>':'')+'</td></tr>').join('')+'</tbody></table>':emptyTable('Még nincsenek importált heti edzésadatok.');
+
 }
 /* Az edzéstervek külön IndexedDB tárolóba kerülnek. A régi workout bejegyzések változatlanok. */
 function activePlan(){return plans.find(p=>p.id===selectedPlanId)||null;}
@@ -226,9 +239,11 @@ function renderPlans(){
   $('plan-config').classList.toggle('hidden',!plan);
   $('plan-name').value=plan?.name||'';
   if(plan){
+    const cardio=$('plan-cardio');if(cardio)cardio.textContent=plan.cardio?'Kardió / levezetés: '+plan.cardio:'';
     $('plan-exercise-list').innerHTML=plan.exercises.length?plan.exercises.map((x,i)=>
       `<div class="plan-exercise"><span class="exercise-number">${i+1}.</span><strong>${escapeHTML(x.name)}</strong><div class="row-actions"><button class="mini-btn" type="button" data-action="move-plan-exercise-up" data-id="${escapeHTML(x.id)}" ${i===0?'disabled':''} aria-label="${escapeHTML(x.name)} előrébb">↑</button><button class="mini-btn" type="button" data-action="move-plan-exercise-down" data-id="${escapeHTML(x.id)}" ${i===plan.exercises.length-1?'disabled':''} aria-label="${escapeHTML(x.name)} hátrébb">↓</button><button class="mini-btn delete-btn" type="button" data-action="remove-plan-exercise" data-id="${escapeHTML(x.id)}">Eltávolítás</button></div></div>`).join(''):emptyTable('Ez a terv még üres. Adj hozzá gyakorlatokat!');
   }
+  if(!plan){const cardio=$('plan-cardio');if(cardio)cardio.textContent='';}
   renderPlanSession();
 }
 function renderPlanSession(){
