@@ -516,6 +516,92 @@ function validateBackup(data){
   for(const r of hWorkout){if(typeof r.id!=='string'||!r.id||knownIds.has(r.id)||!safeDate(r.date)||typeof r.name!=='string'||!r.name.trim())throw Error('Hibás történeti edzés.');knownIds.add(r.id);if(r.weight!==null)validRange(r.weight,0,1000,'Edzéssúly');}
   return {historyBody:hBody,historyWorkouts:hWorkout,plans:cleanPlans,profile:{id:'main',sex:p.sex,height:p.height??null,goal:p.goal??null,name:String(p.name||'').slice(0,50)},weights:data.weights.map(({date,weight})=>({date,weight,bmi:bmi(weight,p.height)})),measurements:data.measurements.map(({date,neck,waist,hip})=>({date,neck,waist,hip:hip??null,bodyFatPercent:navyFat(p.sex,p.height,neck,waist,hip)})),workouts:data.workouts.map(({id,date,name,sets,reps,weight,note,planId,exerciseId})=>({id,date,name,sets,reps,weight,note:String(note||'').slice(0,180),...(typeof planId==='string'&&typeof exerciseId==='string'?{planId,exerciseId}:{})}))};
 }
+function validateHistoricalImport(data){
+  if(!data||data.kind!=='fitnaplo-excel-history'||data.schemaVersion!==1)throw Error('Nem megfelelő Excel-importfájl.');
+  for(const [key,max] of [['dailyWeights',10000],['weeklyBody',2000],['weeklyWorkouts',100000],['plans',25]]){
+    if(!Array.isArray(data[key])||data[key].length>max)throw Error('Hibás vagy túl nagy importlista: '+key);
+  }
+  const bodyKeys=new Set(),weightKeys=new Set(),workoutKeys=new Set(),planKeys=new Set();
+  const daily=data.dailyWeights.map(r=>{
+    if(!safeDate(r.date)||weightKeys.has(r.date))throw Error('Hibás vagy ismétlődő napi dátum.');
+    weightKeys.add(r.date);validRange(r.weight,20,400,'Testsúly');
+    return {date:r.date,weight:r.weight,bmi:bmi(r.weight,profile.height)};
+  });
+  const body=data.weeklyBody.map(r=>{
+    if(!safeDate(r.date)||bodyKeys.has(r.date))throw Error('Hibás vagy ismétlődő heti dátum.');
+    bodyKeys.add(r.date);validRange(r.average,20,400,'Heti átlag');validRange(r.waist,30,250,'Derék');
+    if(r.neck!==null)validRange(r.neck,20,80,'Nyak');
+    return {date:r.date,weekLabel:String(r.weekLabel||'').slice(0,30),average:r.average,waist:r.waist,neck:r.neck??null,source:'Excel'};
+  });
+  const importedPlans=data.plans.map(p=>{
+    if(typeof p.id!=='string'||!p.id||planKeys.has(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>70||!Array.isArray(p.exercises)||p.exercises.length>40)throw Error('Hibás edzésterv.');
+    planKeys.add(p.id);
+    const exIds=new Set(),exNames=new Set();
+    const exercises=p.exercises.map(x=>{
+      if(typeof x.id!=='string'||!x.id||exIds.has(x.id)||typeof x.name!=='string'||!x.name.trim()||x.name.length>90)throw Error('Hibás gyakorlat.');
+      const name=x.name.trim(),key=name.toLocaleLowerCase('hu-HU');
+      if(exNames.has(key))throw Error('Ismétlődő gyakorlat a tervben.');exIds.add(x.id);exNames.add(key);
+      return {id:x.id,name,muscles:String(x.muscles||'').slice(0,150),prescription:String(x.prescription||'').slice(0,120),rest:String(x.rest||'').slice(0,90),sets:x.sets??null,reps:x.reps??null};
+    });
+    return {id:p.id,name:p.name.trim(),exercises,cardio:String(p.cardio||'').slice(0,500)};
+  });
+  const historical=data.weeklyWorkouts.map(r=>{
+    if(typeof r.id!=='string'||!r.id||r.id.length>150||workoutKeys.has(r.id)||!safeDate(r.date)||typeof r.name!=='string'||!r.name.trim()||r.name.length>90)throw Error('Hibás heti edzésbejegyzés.');
+    workoutKeys.add(r.id);
+    if(r.weight!==null)validRange(r.weight,0,1000,'Edzéssúly');
+    if(r.sets!==null&&(!Number.isInteger(r.sets)||r.sets<1||r.sets>30))throw Error('Hibás sorozatszám.');
+    if(r.reps!==null&&(!Number.isInteger(r.reps)||r.reps<1||r.reps>100))throw Error('Hibás ismétlésszám.');
+    if(![1,2].includes(r.pairCount))throw Error('Hibás kézisúlyzó-szorzó.');
+    if(r.comparable&&(!Number.isFinite(r.weight)||!Number.isInteger(r.sets)||!Number.isInteger(r.reps)))throw Error('Nem összehasonlítható terhelés hibásan jelölve.');
+    return {id:r.id,date:r.date,weekLabel:String(r.weekLabel||'').slice(0,30),day:String(r.day||'').slice(0,40),
+      name:r.name.trim(),planId:String(r.planId||'').slice(0,150),exerciseId:String(r.exerciseId||'').slice(0,150),
+      sets:r.sets,reps:r.reps,weight:r.weight,pairCount:r.pairCount,comparable:!!r.comparable,
+      raw:String(r.raw||'').slice(0,200),note:String(r.note||'').slice(0,500),source:'Excel'};
+  });
+  return {daily,body,importedPlans,historical};
+}
+async function importHistoricalExcel(){
+  try{
+    const file=$('history-import-file').files[0];
+    if(!file)throw Error('Válaszd ki a letöltött FitNaplo_Excel_import_2026.json fájlt.');
+    if(file.size>8*1024*1024)throw Error('A fájl túl nagy.');
+    const parsed=validateHistoricalImport(JSON.parse(await file.text()));
+    const knownDates=new Set(weights.map(r=>r.date)),knownBody=new Set(historyBody.map(r=>r.date)),knownWorkout=new Set(historyWorkouts.map(r=>r.id));
+    const newDaily=parsed.daily.filter(r=>!knownDates.has(r.date));
+    const newBody=parsed.body.filter(r=>!knownBody.has(r.date));
+    const newHistorical=parsed.historical.filter(r=>!knownWorkout.has(r.id));
+    const planUpdates=[];
+    for(const imported of parsed.importedPlans){
+      const existing=plans.find(p=>p.id===imported.id||p.name.trim().toLocaleLowerCase('hu-HU')===imported.name.toLocaleLowerCase('hu-HU'));
+      if(!existing){planUpdates.push(imported);continue;}
+      const previous=new Set(existing.exercises.map(ex=>ex.name.trim().toLocaleLowerCase('hu-HU')));
+      const missing=imported.exercises.filter(ex=>!previous.has(ex.name.trim().toLocaleLowerCase('hu-HU')));
+      if(missing.length)planUpdates.push({...existing,exercises:[...existing.exercises,...missing]});
+    }
+    const newPlans=planUpdates.filter(p=>!plans.some(x=>x.id===p.id));
+    if(plans.length+newPlans.length>25)throw Error('A 25 edzéstervre vonatkozó korlát túllépése.');
+    const total=newDaily.length+newBody.length+newHistorical.length+planUpdates.length;
+    if(!total){notify('Minden adatot korábban importáltál. Nem történt felülírás.');return;}
+    const summary='Új napi súlymérések: '+newDaily.length+'\nÚj heti összesítések: '+newBody.length+
+      '\nÚj heti edzésadatok: '+newHistorical.length+'\nÚj vagy bővített edzéstervek: '+planUpdates.length+
+      '\n\nA meglévő bejegyzések nem lesznek felülírva. Indulhat az importálás?';
+    if(!window.confirm(summary))return;
+    requireDB();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction(['weights','historyBody','historyWorkouts','plans'],'readwrite');
+      for(const row of newDaily)tx.objectStore('weights').put(row);
+      for(const row of newBody)tx.objectStore('historyBody').put(row);
+      for(const row of newHistorical)tx.objectStore('historyWorkouts').put(row);
+      for(const row of planUpdates)tx.objectStore('plans').put(row);
+      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Importálási hiba.'));
+    });
+    await refreshData();
+    $('history-import-file').value='';
+    const info=$('history-import-status');
+    if(info)info.textContent='Importálva: '+newDaily.length+' napi mérés, '+newBody.length+' heti összesítés, '+newHistorical.length+' edzésadat, '+planUpdates.length+' edzésterv.';
+    notify('Excel-előzmények sikeresen importálva.');
+  }catch(err){showError(err);}
+}
 async function restoreJSON(){
   try{
     const file=$('import-file').files[0];if(!file)throw Error('Először válassz egy JSON mentésfájlt.');
