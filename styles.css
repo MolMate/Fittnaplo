@@ -36,19 +36,41 @@ input[type="date"]::-webkit-datetime-edit{min-width:0;max-width:100%;padding:0;o
 @media(max-width:355px){.inline-field{flex-wrap:wrap}.inline-field button{width:100%}.session-fields{gap:5px}.session-fields input{padding:8px 3px;font-size:14px}}
 
 
-/* v1.2: iOS Safari dátummező: az operációs rendszer belső minimumszélességétől független keret. */
-.date-control{
-  position:relative; display:flex; align-items:center; gap:8px;
-  width:100%; min-width:0; max-width:100%; height:53px;
-  padding:0 12px; overflow:hidden; isolation:isolate;
-  background:#0c1b2c; border:1px solid #354961; border-radius:10px;
+/* v1.3: natív iOS dátuminput nélkül, a panel szélességén belül maradó naptárral */
+.date-control{width:100%;min-width:0;max-width:100%;overflow:hidden;box-sizing:border-box}
+.date-control input[type=hidden]{display:none}
+.date-control .date-trigger{
+  display:flex;align-items:center;justify-content:space-between;gap:9px;
+  width:100%;min-width:0;max-width:100%;height:53px;box-sizing:border-box;
+  background:#0c1b2c;border:1px solid #354961;border-radius:10px;
+  padding:0 12px;text-align:left;color:#f2f7fe;font-weight:500;font-size:16px;
 }
-.date-control:focus-within{border-color:#65dfcc;box-shadow:0 0 0 3px #57dccb20}
-.date-control-value{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f2f7fe;font-size:16px;pointer-events:none}
-.date-control::after{content:"▦";flex:0 0 auto;color:#93a7ba;font-size:19px;pointer-events:none}
-.date-control input[type="date"]{
-  position:absolute; inset:0; z-index:1; display:block;
-  width:100%; min-width:0; max-width:100%; height:100%;
-  padding:0; margin:0; border:0; border-radius:0;
-  opacity:0; cursor:pointer;
+.date-control .date-trigger:focus-visible{outline:2px solid #63e2d0;outline-offset:2px}
+.date-control-value{min-width:0;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.date-chevron{color:#92afbf;font-size:18px;flex-shrink:0}
+body.calendar-open{overflow:hidden}
+.calendar-overlay{position:fixed;z-index:1000;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(3,11,21,.82);padding:calc(10px + env(safe-area-inset-top)) 12px calc(10px + env(safe-area-inset-bottom));}
+.calendar-dialog{
+  box-sizing:border-box;width:100%;max-width:370px;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;
+  background:#17283e;border:1px solid #3c5975;border-radius:20px;padding:18px 15px 16px;
+  box-shadow:0 15px 55px rgba(0,0,0,.5);
 }
+.calendar-top,.calendar-controls,.calendar-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.calendar-top h2{font-size:18px;margin:0 0 13px}
+.calendar-top button,.calendar-controls button,.calendar-bottom button{min-width:40px;min-height:40px}
+.calendar-close{font-size:23px;margin:0 0 13px;padding:1px 10px}
+.calendar-controls{margin:4px 0 12px}
+.calendar-controls select{min-width:0;width:auto;flex:1;padding:7px 3px;font-size:16px;text-align:center}
+.calendar-controls #calendar-year{flex:0 0 88px}
+.calendar-controls .calendar-arrow{font-size:23px;padding:4px 9px}
+.calendar-weekdays,.calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.calendar-weekdays span{text-align:center;font-size:12px;font-weight:650;color:#9bb5ca;padding:6px 0}
+.calendar-day{min-width:0;min-height:40px;padding:0;border:0;border-radius:10px;background:#263c54;
+  color:#eaf4ff;font-size:15px;font-weight:560}
+.calendar-day.today{outline:1px solid #61e0d0;outline-offset:-2px}
+.calendar-day.selected{background:#5ad9c7;color:#07231f;font-weight:850}
+.calendar-day:focus-visible{outline:2px solid #fff}
+.calendar-bottom{margin-top:14px;justify-content:flex-end}
+.calendar-bottom button{padding:9px 16px}
+@media(max-width:355px){.calendar-dialog{padding:13px 9px}.calendar-controls{gap:4px}.calendar-controls #calendar-year{flex:0 0 75px}.calendar-day{min-height:36px}}
