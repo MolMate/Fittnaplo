@@ -62,7 +62,7 @@ function openDatabase(){
   return new Promise((resolve,reject)=>{
     if(!('indexedDB'in globalThis))return reject(Error('Az IndexedDB nem támogatott ebben a böngészőben.'));
     const req=indexedDB.open(DB_NAME,DB_VERSION);
-    req.onupgradeneeded=()=>{const d=req.result;for(const name of STORE_NAMES){if(!d.objectStoreNames.contains(name))d.createObjectStore(name,{keyPath:name==='weights'||name==='measurements'?'date':'id'});}};
+    req.onupgradeneeded=()=>{const d=req.result;for(const name of STORE_NAMES){if(!d.objectStoreNames.contains(name))d.createObjectStore(name,{keyPath:['weights','measurements','historyBody'].includes(name)?'date':'id'});}};
     req.onsuccess=()=>resolve(req.result);
     req.onerror=()=>reject(req.error);
     req.onblocked=()=>reject(Error('Az adatbázist másik megnyitott lap zárolja.'));
