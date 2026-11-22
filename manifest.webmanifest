@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "FitNapló – Testsúly és edzéskövető",
+  "short_name": "FitNapló",
+  "description": "Privát testsúly-, körfogat- és edzésnapló offline grafikonokkal",
+  "lang": "hu",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1827",
+  "theme_color": "#0d1827",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

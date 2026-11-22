@@ -1,0 +1,21 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const code=fs.readFileSync(require('path').join(__dirname,'..','app.js'),'utf8');
+const context=vm.createContext({window:{addEventListener:()=>{}},document:{},navigator:{},console,Intl,Date,Math,Number,String,Set,Map,Promise,globalThis:undefined});
+vm.runInContext(code,context);
+const evalJS=expr=>vm.runInContext(expr,context);
+function approx(a,b,tol=.15){assert(Math.abs(a-b)<tol,`expected ${b}, got ${a}`);}
+approx(evalJS('bmi(81,180)'),25,0.00001);
+approx(evalJS('navyFat("male",69*2.54,16*2.54,49*2.54,null)'),38.62);
+approx(evalJS('navyFat("female",64*2.54,15*2.54,42*2.54,44*2.54)'),47.3127);
+assert.strictEqual(evalJS('navyFat("male",181,40,40,null)'),null);
+assert.strictEqual(evalJS('navyFat("female",181,39,88,null)'),null);
+assert.strictEqual(evalJS('startOfWeek("2026-11-21")'),'2026-11-16');
+assert.strictEqual(evalJS('startOfWeek("2026-11-22")'),'2026-11-16');
+assert.strictEqual(evalJS('startOfWeek("2026-11-23")'),'2026-11-23');
+const averages=evalJS('weeklyWeights([{date:"2026-11-16",weight:86.4},{date:"2026-11-19",weight:86},{date:"2026-11-23",weight:85.5}])');
+assert.strictEqual(averages.length,2);approx(averages[0].average,86.2,0.0001);assert.strictEqual(averages[0].count,2);
+assert.strictEqual(evalJS('estimated1RM({reps:8,weight:60})'),76);
+assert.strictEqual(evalJS('estimated1RM({reps:20,weight:60})'),null);
+assert.strictEqual(evalJS('volume({sets:4,reps:8,weight:62.5})'),2000);
+assert.strictEqual(evalJS('escapeHTML(`<script>"&`)'),'&lt;script&gt;&quot;&amp;');
+console.log('13 unit tests passed: BMI, male/female Navy, invalid inputs, ISO weeks, weighted weekly mean, e1RM, volume, HTML escaping.');
