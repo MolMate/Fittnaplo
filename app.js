@@ -217,7 +217,7 @@ function updateExerciseSelect(){
 }
 function renderWorkouts(){
   updateExerciseSelect();
-  $('workouts-table').innerHTML=workouts.length?`<table><thead><tr><th>Dátum</th><th>Gyakorlat</th><th>Sor. × ism.</th><th>Súly</th><th>Volumen</th><th>Művelet</th></tr></thead><tbody>${[...workouts].reverse().map(r=>`<tr><td>${dateLabel(r.date)}</td><td><b>${escapeHTML(r.name)}</b>${r.note?`<div class="muted small">${escapeHTML(r.note)}</div>`:''}</td><td>${r.sets} × ${r.reps}</td><td>${format(r.weight)} kg</td><td>${format(volume(r),0)} kg</td><td><div class="row-actions"><button class="mini-btn" data-action="edit-workout" data-id="${escapeHTML(r.id)}">Szerk.</button><button class="mini-btn delete-btn" data-action="delete-workout" data-id="${escapeHTML(r.id)}">Törlés</button></div></td></tr>`).join('')}</tbody></table>`:emptyTable('Még nincs edzésbejegyzés.');
+  $('workouts-table').innerHTML=workouts.length?`<table><thead><tr><th>Dátum</th><th>Gyakorlat</th><th>Sor. × ism.</th><th>Súly</th><th>Volumen</th><th>Művelet</th></tr></thead><tbody>${[...workouts].reverse().map(r=>`<tr><td>${dateLabel(r.date)}</td><td><b>${escapeHTML(r.name)}</b>${r.variation?`<div class="muted small">Másik gép / helyettesítés: ${escapeHTML(r.variation)}</div>`:''}${r.note?`<div class="muted small">${escapeHTML(r.note)}</div>`:''}</td><td>${r.sets} × ${r.reps}</td><td>${format(r.weight)} kg</td><td>${format(volume(r),0)} kg</td><td><div class="row-actions"><button class="mini-btn" data-action="edit-workout" data-id="${escapeHTML(r.id)}">Szerk.</button><button class="mini-btn delete-btn" data-action="delete-workout" data-id="${escapeHTML(r.id)}">Törlés</button></div></td></tr>`).join('')}</tbody></table>`:emptyTable('Még nincs edzésbejegyzés.');
   const historyTable=$('history-workouts-table');
   if(historyTable)historyTable.innerHTML=historyWorkouts.length?
     '<table><thead><tr><th>Hét</th><th>Nap</th><th>Gyakorlat</th><th>Excel érték</th><th>Értelmezés</th></tr></thead><tbody>'+
@@ -492,7 +492,7 @@ function renderCharts(){
 
 function validRange(value,min,max,name){if(!Number.isFinite(value)||value<min||value>max)throw Error(`${name}: adj meg ${min}–${max} közötti értéket.`);}
 function confirmDelete(label){return window.confirm(`Biztosan törölni szeretnéd ezt a bejegyzést?\n${label}`);}
-function resetWorkoutForm(){ $('workout-form').reset();$('workout-edit-id').value='';$('workout-date').value=today();$('workout-sets').value='3';$('workout-reps').value='8';$('workout-save').textContent='Gyakorlat mentése';syncDateControls();}
+function resetWorkoutForm(){ $('workout-form').reset();$('workout-edit-id').value='';$('workout-date').value=today();$('workout-sets').value='3';$('workout-reps').value='8';$('workout-variation').value='';$('workout-save').textContent='Gyakorlat mentése';syncDateControls();}
 function resetWeightForm(){ $('weight-form').reset();$('weight-date').value=today();syncDateControls();}
 function resetMeasureForm(){ $('measure-form').reset();$('measure-date').value=today();showSexFields();syncDateControls();}
 async function onWeightSubmit(e){
@@ -514,11 +514,11 @@ async function onMeasureSubmit(e){
 async function onWorkoutSubmit(e){
   e.preventDefault();try{
     const id=$('workout-edit-id').value||uid(),date=$('workout-date').value,name=$('workout-name').value.trim();
-    const sets=decimal($('workout-sets').value),reps=decimal($('workout-reps').value),weight=decimal($('workout-load').value),note=$('workout-note').value.trim();
+    const sets=decimal($('workout-sets').value),reps=decimal($('workout-reps').value),weight=decimal($('workout-load').value),note=$('workout-note').value.trim(),variation=$('workout-variation').value.trim();
     if(!safeDate(date))throw Error('Érvénytelen dátum.');if(!name||name.length>90)throw Error('A gyakorlat neve nem lehet üres.');
     validRange(sets,1,30,'Sorozat');validRange(reps,1,100,'Ismétlés');validRange(weight,0,1000,'Súly');
     if(!Number.isInteger(sets)||!Number.isInteger(reps))throw Error('A sorozat és ismétlés egész szám legyen.');
-    const old=workouts.find(r=>r.id===id);await operation('workouts','put',{...(old||{}),id,date,name,sets,reps,weight,note});await refreshData();resetWorkoutForm();notify('Edzésbejegyzés mentve.');
+    const old=workouts.find(r=>r.id===id);await operation('workouts','put',{...(old||{}),id,date,name,sets,reps,weight,note,variation});await refreshData();resetWorkoutForm();notify('Edzésbejegyzés mentve.');
   }catch(err){showError(err);}
 }
 async function onProfileSubmit(e){
@@ -544,7 +544,7 @@ async function onTableClick(e){
       const r=measurements.find(x=>x.date===id);if(!r)return;$('measure-date').value=r.date;$('measure-neck').value=r.neck;$('measure-waist').value=r.waist;$('measure-hip').value=r.hip??'';changePage('body');syncDateControls();$('measure-form').scrollIntoView({behavior:'smooth',block:'start'});notify('Módosítsd az értékeket, majd mentsd el.');
     }else if(action==='edit-workout'){
       const r=workouts.find(x=>x.id===id);if(!r)return;
-      $('workout-edit-id').value=r.id;$('workout-date').value=r.date;$('workout-name').value=r.name;$('workout-sets').value=r.sets;$('workout-reps').value=r.reps;$('workout-load').value=r.weight;$('workout-note').value=r.note||'';$('workout-save').textContent='Módosítás mentése';
+      $('workout-edit-id').value=r.id;$('workout-date').value=r.date;$('workout-name').value=r.name;$('workout-sets').value=r.sets;$('workout-reps').value=r.reps;$('workout-load').value=r.weight;$('workout-note').value=r.note||'';$('workout-variation').value=r.variation||'';$('workout-save').textContent='Módosítás mentése';$('extra-workout-details').open=true;
       changePage('workout');syncDateControls();$('workout-form').scrollIntoView({behavior:'smooth',block:'start'});
     }
   }catch(err){showError(err);}
@@ -561,7 +561,7 @@ function exportCSV(){
   const rows=[header];
   for(const r of weights)rows.push(['testsuly',r.date,'',r.weight,'','','',bmi(r.weight,profile.height),'','','','','','']);
   for(const r of measurements)rows.push(['korfogat',r.date,'','',r.neck,r.waist,r.hip??'','',navyFat(profile.sex,profile.height,r.neck,r.waist,r.hip),'','','','','']);
-  for(const r of workouts)rows.push(['edzes',r.date,r.name,'','','','','','',r.sets,r.reps,r.weight,volume(r),r.note||'']);
+  for(const r of workouts)rows.push(['edzes',r.date,r.name,'','','','','','',r.sets,r.reps,r.weight,volume(r),(r.variation?'Gép / helyettesítés: '+r.variation+'; ':'')+(r.note||'')]);
   for(const r of historyBody)rows.push(['heti_excel',r.date,r.weekLabel,r.average,r.neck??'',r.waist,'','','','','','','','Heti átlag, nem napi mérés']);
   for(const r of historyWorkouts)rows.push(['heti_edzes_excel',r.date,r.name,'','','','','','',r.sets??'',r.reps??'',r.weight??'',r.comparable?r.sets*r.reps*r.weight*(r.pairCount||1):'',r.weekLabel+' · '+r.day+' · '+r.raw+' · '+(r.note||'')]);
   const escapeCell=v=>{let s=v===null||v===undefined?'':typeof v==='number'?String(v).replace('.',','):String(v);return '"'+s.replaceAll('"','""')+'"';};
@@ -592,7 +592,7 @@ function validateBackup(data){
   const knownDates=new Set(),knownIds=new Set();
   for(const r of hBody){if(!safeDate(r.date)||knownDates.has(r.date))throw Error('Hibás importált heti dátum.');knownDates.add(r.date);validRange(r.average,20,400,'Heti átlag');validRange(r.waist,30,250,'Derék');if(r.neck!==null)validRange(r.neck,20,80,'Nyak');}
   for(const r of hWorkout){if(typeof r.id!=='string'||!r.id||knownIds.has(r.id)||!safeDate(r.date)||typeof r.name!=='string'||!r.name.trim())throw Error('Hibás történeti edzés.');knownIds.add(r.id);if(r.weight!==null)validRange(r.weight,0,1000,'Edzéssúly');}
-  return {historyBody:hBody,historyWorkouts:hWorkout,plans:cleanPlans,profile:{id:'main',sex:p.sex,height:p.height??null,goal:p.goal??null,name:String(p.name||'').slice(0,50)},weights:data.weights.map(({date,weight})=>({date,weight,bmi:bmi(weight,p.height)})),measurements:data.measurements.map(({date,neck,waist,hip})=>({date,neck,waist,hip:hip??null,bodyFatPercent:navyFat(p.sex,p.height,neck,waist,hip)})),workouts:data.workouts.map(({id,date,name,sets,reps,weight,note,planId,exerciseId})=>({id,date,name,sets,reps,weight,note:String(note||'').slice(0,180),...(typeof planId==='string'&&typeof exerciseId==='string'?{planId,exerciseId}:{})}))};
+  return {historyBody:hBody,historyWorkouts:hWorkout,plans:cleanPlans,profile:{id:'main',sex:p.sex,height:p.height??null,goal:p.goal??null,name:String(p.name||'').slice(0,50)},weights:data.weights.map(({date,weight})=>({date,weight,bmi:bmi(weight,p.height)})),measurements:data.measurements.map(({date,neck,waist,hip})=>({date,neck,waist,hip:hip??null,bodyFatPercent:navyFat(p.sex,p.height,neck,waist,hip)})),workouts:data.workouts.map(({id,date,name,sets,reps,weight,note,variation,planId,exerciseId})=>({id,date,name,sets,reps,weight,note:String(note||'').slice(0,180),variation:String(variation||'').slice(0,120),...(typeof planId==='string'&&typeof exerciseId==='string'?{planId,exerciseId}:{})}))};
 }
 function validateHistoricalImport(data){
   if(!data||data.kind!=='fitnaplo-excel-history'||data.schemaVersion!==1)throw Error('Nem megfelelő Excel-importfájl.');
@@ -708,7 +708,7 @@ function refreshDatesOnNewDay(){
   const unfinished=[...$('plan-session-list').querySelectorAll('.session-exercise')].some(node=>{
     const ex=plan?.exercises.find(x=>x.id===node.dataset.exerciseId);
     const logged=ex?workouts.find(r=>r.planId===plan.id&&r.exerciseId===ex.id&&r.date===selectedDate):null;
-    return ['sets','reps','weight'].some(key=>{
+    return ['sets','reps','weight','variation','note'].some(key=>{
       const field=node.querySelector(`[data-field="${key}"]`);
       return field&&field.value!==(logged?String(logged[key]):'');
     });
