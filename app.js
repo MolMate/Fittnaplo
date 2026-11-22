@@ -95,7 +95,7 @@ async function storeProfileAndDerived(nextProfile){
    A felirat mindig az input tényleges dátumértékét mutatja, helyi dátumformátumban. */
 function syncDateControls(){
   document.querySelectorAll('.date-control').forEach(control=>{
-    const input=control.querySelector('input[type="date"]');
+    const input=control.querySelector('input[data-calendar-date-value]');
     const value=control.querySelector('.date-control-value');
     if(!input||!value)return;
     value.textContent=safeDate(input.value)
@@ -426,13 +426,13 @@ async function onTableClick(e){
       await operation(store,'delete',id);await refreshData();notify('Bejegyzés törölve.');return;
     }
     if(action==='edit-weight'){
-      const r=weights.find(x=>x.date===id);if(!r)return;$('weight-date').value=r.date;$('weight-value').value=r.weight;changePage('body');$('weight-form').scrollIntoView({behavior:'smooth',block:'start'});notify('Módosítsd az értéket, majd mentsd el.');
+      const r=weights.find(x=>x.date===id);if(!r)return;$('weight-date').value=r.date;$('weight-value').value=r.weight;changePage('body');syncDateControls();$('weight-form').scrollIntoView({behavior:'smooth',block:'start'});notify('Módosítsd az értéket, majd mentsd el.');
     }else if(action==='edit-measure'){
-      const r=measurements.find(x=>x.date===id);if(!r)return;$('measure-date').value=r.date;$('measure-neck').value=r.neck;$('measure-waist').value=r.waist;$('measure-hip').value=r.hip??'';changePage('body');$('measure-form').scrollIntoView({behavior:'smooth',block:'start'});notify('Módosítsd az értékeket, majd mentsd el.');
+      const r=measurements.find(x=>x.date===id);if(!r)return;$('measure-date').value=r.date;$('measure-neck').value=r.neck;$('measure-waist').value=r.waist;$('measure-hip').value=r.hip??'';changePage('body');syncDateControls();$('measure-form').scrollIntoView({behavior:'smooth',block:'start'});notify('Módosítsd az értékeket, majd mentsd el.');
     }else if(action==='edit-workout'){
       const r=workouts.find(x=>x.id===id);if(!r)return;
       $('workout-edit-id').value=r.id;$('workout-date').value=r.date;$('workout-name').value=r.name;$('workout-sets').value=r.sets;$('workout-reps').value=r.reps;$('workout-load').value=r.weight;$('workout-note').value=r.note||'';$('workout-save').textContent='Módosítás mentése';
-      changePage('workout');$('workout-form').scrollIntoView({behavior:'smooth',block:'start'});
+      changePage('workout');syncDateControls();$('workout-form').scrollIntoView({behavior:'smooth',block:'start'});
     }
   }catch(err){showError(err);}
 }
@@ -513,7 +513,7 @@ function refreshDatesOnNewDay(){
 }
 async function init(){
   const date=today();for(const id of ['weight-date','measure-date','workout-date','plan-session-date'])$(id).value=date;lastDateRefresh=date;
-  document.querySelectorAll('.date-control input[type="date"]').forEach(input=>{
+  document.querySelectorAll('.date-control input[data-calendar-date-value]').forEach(input=>{
     input.addEventListener('input',syncDateControls);
     input.addEventListener('change',syncDateControls);
   });
@@ -536,7 +536,15 @@ async function init(){
   try{db=await openDatabase();await refreshData();$('storage-status').textContent='A helyi adatbázis működik. Készíts rendszeresen JSON biztonsági mentést.';}
   catch(e){showError(e);$('storage-status').textContent='Az adatbázis nem érhető el: '+e.message;document.querySelectorAll('form button[type=submit]').forEach(b=>b.disabled=true);}
   if('serviceWorker'in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
-    navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline gyorsítótár nem telepíthető:',e));
+    let alreadyReloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(alreadyReloaded)return;
+      alreadyReloaded=true;
+      location.reload();
+    });
+    navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'})
+      .then(reg=>reg.update())
+      .catch(e=>console.warn('Offline gyorsítótár nem frissíthető:',e));
   }
 }
 window.addEventListener('DOMContentLoaded',init);
