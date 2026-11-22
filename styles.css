@@ -81,3 +81,40 @@ body.calendar-open{overflow:hidden}
 #weekly-workout-history .table-wrap{margin-top:12px}
 #history-body-table td,#history-workouts-table td{vertical-align:top}
 #history-import-status{line-height:1.6}
+
+
+/* v1.5 - Gyors edzésnapló és szétválasztott testsúlygrafikonok */
+.session-main-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-bottom:16px;align-items:end}
+.session-main-controls>*{min-width:0;max-width:100%}
+.session-main-controls label{margin-top:4px}
+.session-main-controls select,.session-main-controls .date-control{width:100%;max-width:100%}
+.session-exercise{background:#172b41;border:1px solid #354d64;border-radius:14px;padding:14px;margin-bottom:12px}
+.session-exercise:last-child{border-bottom:1px solid #354d64}
+.session-exercise-head{gap:8px;align-items:baseline;display:flex}
+.session-exercise-head .saved-label{align-self:center;white-space:nowrap}
+.exercise-target{font-size:12px;color:#9dc2d0;margin:5px 0 0 32px}
+.previous-result{margin:12px 0 10px;padding:10px 11px;background:#102334;border-radius:10px;border:1px solid #2d465b;color:#c6e1e9;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;overflow-wrap:anywhere}
+.previous-result span{flex:1;min-width:150px}
+.previous-result button{flex:0 0 auto}
+.session-fields label{font-size:12px;margin:4px 0 5px}
+.session-fields input{min-width:0;width:100%;padding:9px 7px;font-size:16px}
+.exercise-notes{margin-top:12px;border-top:1px solid #31485e;padding-top:10px}
+.exercise-notes summary{font-size:12px;color:#a7c8d8;cursor:pointer;line-height:1.5}
+.exercise-notes[open] summary{color:#65e0ce;font-weight:700}
+.exercise-notes input{margin-bottom:6px}
+.session-card-actions{display:flex;justify-content:flex-end;margin-top:12px}
+.session-card-actions button{min-width:150px}
+.extra-workout-details>summary{font-size:14px;font-weight:750;color:#c4e1ea;cursor:pointer;line-height:1.7}
+.extra-workout-details[open]>summary{margin-bottom:18px;color:#6de0cc}
+.extra-workout-details #workout-form{margin-top:8px}
+#plans-panel{scroll-margin-top:24px}
+#plans-panel .plan-picker{grid-template-columns:minmax(0,1fr) minmax(0,1.5fr)}
+@media(max-width:750px){
+ .session-main-controls,#plans-panel .plan-picker{grid-template-columns:minmax(0,1fr)}
+ .session-exercise{padding:12px}
+ .session-exercise-head strong{line-height:1.4}
+}
+@media(max-width:355px){
+ .previous-result button{width:100%}
+ .session-card-actions button{width:100%}
+}
