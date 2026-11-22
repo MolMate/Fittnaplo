@@ -3,3 +3,34 @@
 @media(max-width:750px){.shell{padding-left:13px;padding-right:13px}.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.metric-card{padding:14px}.panel{padding:17px}.two-col{grid-template-columns:1fr}.chart-host{height:230px}.masthead{padding-top:calc(14px + env(safe-area-inset-top));padding-bottom:22px}.offline-label{font-size:10px;padding:7px}.panel-head select{max-width:160px}.heading{margin-bottom:16px}}
 @media(max-width:410px){.subtitle{font-size:10px}.brand{font-size:17px}.panel-head{align-items:flex-start}.panel-head select{font-size:11px}.tabbar button{font-size:10px}.two-inputs{grid-template-columns:1fr}.three-inputs{gap:7px}.three-inputs input{padding:8px 5px}.metric-card .value{font-size:24px}.chart-host{height:210px}}
 @media(min-width:780px){.tabbar{left:50%;transform:translateX(-50%);width:max-content;border:1px solid #2a3f57;border-bottom:0;border-radius:18px 18px 0 0;padding-left:15px;padding-right:15px}.tabbar button{width:110px;flex:0 0 110px}}
+
+/* v1.1: iPhone Safari saját dátumválasztójának és a kis képernyőknek javítása */
+input[type="date"]{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;min-height:45px;font-size:16px;overflow:hidden}
+input[type="date"]::-webkit-date-and-time-value{min-width:0;text-align:left}
+input[type="date"]::-webkit-datetime-edit{min-width:0;max-width:100%;padding:0;overflow:hidden}
+.two-col>*,.two-inputs>*,.three-inputs>*,.plan-picker>*,.plan-name-row>*,.session-date-row>*,.inline-field>*{min-width:0;max-width:100%}
+.explanation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:10px 0 18px}
+.interpretation-item{background:#172c40;border:1px solid #2e465b;border-radius:14px;padding:15px;min-width:0}
+.interpretation-title{font-size:12px;font-weight:700;color:#adc7d6}
+.interpretation-value{font-size:25px;font-weight:800;color:#f2f7fe;margin:6px 0 3px}
+.interpretation-status{font-weight:720;color:#79e2d3;font-size:13px}
+.interpretation-item p{font-size:12px;color:#c6d7e2;line-height:1.5;margin:10px 0}
+.interpretation-item p.field-help{color:#92a7b9}
+.interpretation-date{color:#86a0b7;font-size:11px;margin-top:11px}
+.plan-picker{display:grid;grid-template-columns:1fr 1.5fr;gap:14px;align-items:end}
+.inline-field{display:flex;gap:8px;align-items:center}.inline-field input{flex:1;min-width:0}.inline-field button{flex:0 0 auto;white-space:nowrap}
+.plan-name-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:end}
+.plan-name-row label{margin-top:0}.danger-button{color:#f3b6b6;border-color:#744651}
+.subheading{font-size:14px;color:#d9e9f4;margin:20px 0 8px}
+.plan-exercise{padding:10px 0;border-bottom:1px solid #304257;display:flex;align-items:center;gap:10px;min-width:0}
+.plan-exercise strong{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px}
+.exercise-number{color:#83a0b6;font-size:12px;flex:0 0 24px}
+.session-date-row{display:grid;grid-template-columns:minmax(0,1fr) 1fr;align-items:end;gap:13px;margin-bottom:12px}
+.session-date-row .field-help{margin-bottom:11px}
+.session-exercise{padding:13px 0;border-bottom:1px solid #304257}.session-exercise:last-child{border-bottom:0}
+.session-exercise-head{display:flex;align-items:center;gap:8px;min-width:0}.session-exercise-head strong{overflow-wrap:anywhere;min-width:0}
+.saved-label{font-size:10px;font-weight:740;border:1px solid #337568;background:#1b4847;border-radius:7px;color:#92ecdd;padding:3px 6px;margin-left:auto}
+.session-fields label{margin-top:9px}.session-exercise .field-help{margin-top:7px}
+@media(max-width:750px){.explanation-grid,.plan-picker,.session-date-row{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:410px){.plan-name-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.plan-name-row>div{grid-column:1/-1}.plan-name-row button{width:100%}.plan-exercise{flex-wrap:wrap}.plan-exercise strong{flex:1}.plan-exercise .row-actions{flex-basis:100%;justify-content:flex-end}}
+@media(max-width:355px){.inline-field{flex-wrap:wrap}.inline-field button{width:100%}.session-fields{gap:5px}.session-fields input{padding:8px 3px;font-size:14px}}

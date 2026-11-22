@@ -1,6 +1,15 @@
-# FitNapló 1.0 — testsúly-, testösszetétel- és edzéskövető PWA
+# FitNapló 1.1 — testsúly-, testösszetétel- és edzéskövető PWA
 
 Saját használatra készített, magyar nyelvű, mobileszközön is futó **offline-first** webalkalmazás.
+
+## Újdonságok az 1.1-es verzióban
+
+- **Edzéstervek:** több elnevezett edzésterv, előre rögzített gyakorlatok, tetszőleges sorrend, dátumhoz tartozó tömeges edzésnaplózás. Egy napi/terves gyakorlatsor mentése felülírja az aznap korábban rögzített megfelelő tervadatot, de más napokat nem érint.
+- **Értelmezés:** a BMI-hez felnőtt kategória, a Navy-testzsírbecsléshez a hagyományos ACE-referencia szerinti, **nem diagnosztikus** leírás.
+- **Mobil dátummezők:** megerősített, mobil Safari-kompatibilis méretkorlátok. Új appindításnál a dátumok az aktuális helyi napra állnak; napváltáskor az üres űrlapok frissülnek.
+- **Adatmegőrzés:** a régi adatbázis automatikusan új verzióra frissül. A v1 JSON mentések változatlanul visszaállíthatók, az új JSON export a terveket is tartalmazza.
+
+**Frissítés előtt** az iPhone-on készíts JSON biztonsági mentést. A GitHub Pages `index.html`, `app.js`, `styles.css`, `sw.js` és `README.md` állományait cseréld le az új csomag megfelelő fájljaira, vagy töltsd fel az összes új fájlt. A telepített PWA-t ne töröld: az azzal együtt helyben tárolt adatok elveszhetnek. A frissítéshez nyisd meg az appot online és szükség esetén zárd be, majd nyisd meg újra (a service worker lecserélődéséhez).
 
 ## Mit tud?
 
@@ -9,6 +18,7 @@ Saját használatra készített, magyar nyelvű, mobileszközön is futó **offl
 - **BMI:** testsúly / testmagasság². A testmagasságot a Beállítások lapon add meg.
 - **Körfogatok:** nyak, derék/has, női képletnél csípő; dátumozott mérések, szerkesztés és törlés.
 - **US Navy testzsír:** becslés az eredeti Hodgdon–Beckett egyenletek alapján, centiméterről hüvelykre váltással; a képlet kiválasztása a profilban.
+- **Edzéstervek:** menthető, kiválasztható gyakorlatlista. Az edzésnapon csak az új sorozatot, ismétlést és súlyt kell felvinni.
 - **Edzés:** gyakorlatnév, dátum, sorozatszám, sorozatonkénti ismétlésszám, súly (kg), megjegyzés; szerkesztés, törlés.
 - **Grafikonok:** napi testsúly, heti átlag, BMI, testzsír, nyak, derék/has, gyakorlatonként heti maximális súly, heti volumen, becsült 1RM.
 - **Adatvédelem:** nincs szerveroldali adatbázis, fiók, analitika, követőkód vagy külső JavaScript-könyvtár.
@@ -93,7 +103,7 @@ A képlet **becslés**, gyakran több százalékpontot is tévedhet egy pontosab
 
 ## 6. Ismert korlátok, továbbfejlesztés
 
-Ez egy **első, használható MVP**, nem éles, szinkronizált termékszolgáltatás. Nincs bejelentkezés, felhőmentés, iCloud szinkron, adatok automatikus telefonok közti átadása, edzéstervek/szettek RPE/RIR követése vagy Apple Health-integráció. Az alkalmazás nem tud helyi értesítést küldeni beállítás nélkül. A testsúlyadatokat napi egy értékre korlátoztuk; több mérés ugyanarra a napra felülírja az aznapi sort.
+Ez egy **első, használható MVP**, nem éles, szinkronizált termékszolgáltatás. Nincs bejelentkezés, felhőmentés, iCloud szinkron, adatok automatikus telefonok közti átadása, RPE/RIR követése vagy Apple Health-integráció. Az alkalmazás nem tud helyi értesítést küldeni beállítás nélkül. A testsúlyadatokat napi egy értékre korlátoztuk; több mérés ugyanarra a napra felülírja az aznapi sort.
 
 A fejlesztés további logikus iránya: GitHub Pages + Supabase (bejelentkezés és szinkronizált adatbázis), vagy natív React Native kiadás. Felhőszinkronizálás előtt külön adatvédelmi terv szükséges.
 
@@ -113,3 +123,10 @@ node tests/teszt_kepletek.cjs
 ```
 
 A teszt ellenőrzi többek között a BMI-t, a férfi és női Navy-képletet, a hét kezdőnapját, a heti átlagolást, az edzésvolument és a becsült 1RM-et. Ez **nem** helyettesíti az iOS Safari készülékes funkcionális tesztelését.
+
+## Mutatók értelmezési forrásai
+
+- Felnőtt BMI-kategóriák (CDC): https://www.cdc.gov/bmi/adult-calculator/bmi-categories.html
+- A hagyományos American Council on Exercise (ACE) testzsír-referenciatartományok reprodukciója egy egészségügyi szakmai összefoglalóban: https://www.bcm.edu/sites/default/files/f-9-213-16479100_VkUjK61I_Obesity_in_Adults_2020_08.pdf
+
+A testzsír-besorolások módszer- és populációfüggők, és nem alkalmasak betegség megállapítására vagy személyes orvosi céltartomány meghatározására.
