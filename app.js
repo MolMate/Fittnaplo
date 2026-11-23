@@ -5,7 +5,13 @@ const DB_VERSION=3;
 const STORE_NAMES=['profile','weights','measurements','workouts','plans','historyBody','historyWorkouts'];
 const DEFAULT_PROFILE={id:'main',height:null,sex:'male',goal:null,name:''};
 const $=id=>document.getElementById(id);
-const decimal=v=>v===null||v===undefined||v===''?null:Number(String(v).replace(',','.'));
+// Magyar tizedesvessző és tizedespont támogatása, hibás bemenet nem válik csendben nullává.
+const decimal=v=>{
+  if(v===null||v===undefined||String(v).trim()==='')return null;
+  const normalized=String(v).trim().replace(/\s/g,'').replace(',','.');
+  if(!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized))return NaN;
+  return Number(normalized);
+};
 const finitePositive=v=>typeof v==='number'&&Number.isFinite(v)&&v>0;
 const format=(v,dec=1)=>Number.isFinite(v)?new Intl.NumberFormat('hu-HU',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(v):'—';
 const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -279,7 +285,7 @@ function renderPlanSession(){
       <div class="three-inputs session-fields">
         <div><label>Sorozat</label><input aria-label="${escapeHTML(ex.name)} sorozat" data-field="sets" type="number" min="1" max="30" step="1" inputmode="numeric" value="${sets}" placeholder="${Number.isInteger(ex.sets)?ex.sets:3}"></div>
         <div><label>Ismétlés</label><input aria-label="${escapeHTML(ex.name)} ismétlés" data-field="reps" type="number" min="1" max="100" step="1" inputmode="numeric" value="${reps}" placeholder="${Number.isInteger(ex.reps)?ex.reps:8}"></div>
-        <div><label>Súly (kg)</label><input aria-label="${escapeHTML(ex.name)} súly kg" data-field="weight" type="number" min="0" max="1000" step="0.5" inputmode="decimal" value="${weight}" placeholder="kg"></div>
+        <div><label>Súly (kg)</label><input aria-label="${escapeHTML(ex.name)} súly kg" data-field="weight" type="text" min="0" max="1000" step="0.5" inputmode="decimal" value="${weight}" placeholder="kg"></div>
       </div>
       <details class="exercise-notes"${detailsOpen}><summary>Másik gép / helyettesítés / megjegyzés ${prior?.variation||prior?.note?'•':''}</summary>
         <label>Eltérő gép vagy helyettesítő gyakorlat</label><input type="text" maxlength="120" data-field="variation" aria-label="${escapeHTML(ex.name)} gép vagy helyettesítés" placeholder="pl. másik mellnyomó gép" value="${escapeHTML(prior?.variation||'')}">
@@ -731,6 +737,10 @@ function refreshDatesOnNewDay(){
   lastDateRefresh=now;
   syncDateControls();
 }
+// A képernyő PWA-ként rögzített méretű; a gyári segítő hozzáférhetőségi zoom ettől független lehet.
+document.addEventListener('gesturestart',event=>event.preventDefault(),{passive:false});
+document.addEventListener('gesturechange',event=>event.preventDefault(),{passive:false});
+
 async function init(){
   const date=today();for(const id of ['weight-date','measure-date','workout-date','plan-session-date'])$(id).value=date;lastDateRefresh=date;
   document.querySelectorAll('.date-control input[data-calendar-date-value]').forEach(input=>{
