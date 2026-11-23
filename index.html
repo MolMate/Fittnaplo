@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#0d1827">
   <meta name="description" content="Személyes testsúly-, testösszetétel- és edzésnapló, offline működéssel.">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.5">
+  <link rel="stylesheet" href="styles.css?v=1.6">
   <title>FitNapló – Személyes fejlődéskövető</title>
 </head>
 <body>
@@ -36,13 +36,13 @@
         <div class="two-col">
           <form class="panel" id="weight-form"><div class="panel-head"><div><h2>Testsúly rögzítése</h2><p>Napi egy adat; ugyanarra a dátumra mentve felülírható.</p></div></div>
             <label for="weight-date-button">Mérés dátuma</label><div class="date-control"><button type="button" class="date-trigger" id="weight-date-button" data-date-for="weight-date" aria-label="Dátum kiválasztása"><span class="date-control-value">Válassz dátumot</span><span class="date-chevron" aria-hidden="true">▦</span></button><input type="hidden" id="weight-date" data-calendar-date-value></div>
-            <label for="weight-value">Testsúly (kg)</label><input required type="number" id="weight-value" min="20" max="400" step="0.1" placeholder="pl. 84,5" inputmode="decimal">
+            <label for="weight-value">Testsúly (kg)</label><input required type="text" id="weight-value" placeholder="pl. 84,5" inputmode="decimal">
             <div class="form-actions"><button class="primary" type="submit">Testsúly mentése</button><button type="button" class="quiet" id="weight-reset">Űrlap törlése</button></div>
           </form>
           <form class="panel" id="measure-form"><div class="panel-head"><div><h2>Körfogatmérés</h2><p>Javasolt hetente egyszer, azonos mérési módszerrel.</p></div></div>
             <label for="measure-date-button">Mérés dátuma</label><div class="date-control"><button type="button" class="date-trigger" id="measure-date-button" data-date-for="measure-date" aria-label="Dátum kiválasztása"><span class="date-control-value">Válassz dátumot</span><span class="date-chevron" aria-hidden="true">▦</span></button><input type="hidden" id="measure-date" data-calendar-date-value></div>
-            <div class="two-inputs"><div><label for="measure-neck">Nyakkörfogat (cm)</label><input required type="number" id="measure-neck" min="20" max="80" step="0.1" inputmode="decimal" placeholder="pl. 39"></div><div><label for="measure-waist" id="waist-label">Haskörfogat a köldöknél (cm)</label><input required type="number" id="measure-waist" min="30" max="250" step="0.1" inputmode="decimal" placeholder="pl. 90"></div></div>
-            <div id="hip-row" class="hidden"><label for="measure-hip">Csípőkörfogat (cm)</label><input type="number" id="measure-hip" min="40" max="250" step="0.1" inputmode="decimal" placeholder="pl. 98"></div>
+            <div class="two-inputs"><div><label for="measure-neck">Nyakkörfogat (cm)</label><input required type="text" id="measure-neck" inputmode="decimal" placeholder="pl. 39"></div><div><label for="measure-waist" id="waist-label">Haskörfogat a köldöknél (cm)</label><input required type="text" id="measure-waist" inputmode="decimal" placeholder="pl. 90"></div></div>
+            <div id="hip-row" class="hidden"><label for="measure-hip">Csípőkörfogat (cm)</label><input type="text" id="measure-hip" inputmode="decimal" placeholder="pl. 98"></div>
             <p class="field-help" id="measure-explain">Férfi képlet: haskörfogat a köldök magasságában, nyak közvetlenül a gége alatt.</p>
             <div class="form-actions"><button class="primary" type="submit">Mérés mentése</button><button type="button" class="quiet" id="measure-reset">Űrlap törlése</button></div>
           </form>
@@ -69,7 +69,7 @@
         <details class="panel extra-workout-details" id="extra-workout-details"><summary>+ Egyedi gyakorlat vagy más sorozatcsoport</summary><form id="workout-form"><div class="panel-head"><div><h2>Egyedi gyakorlat rögzítése</h2><p>Edzésterven kívüli vagy eltérő sorozatcsoport külön mentéséhez. Egy bejegyzés egy azonos súllyal és ismétlésszámmal végzett sorozatcsoportot jelent.</p></div></div>
           <input type="hidden" id="workout-edit-id">
           <div class="two-inputs"><div><label for="workout-date-button">Edzés dátuma</label><div class="date-control"><button type="button" class="date-trigger" id="workout-date-button" data-date-for="workout-date" aria-label="Dátum kiválasztása"><span class="date-control-value">Válassz dátumot</span><span class="date-chevron" aria-hidden="true">▦</span></button><input type="hidden" id="workout-date" data-calendar-date-value></div></div><div><label for="workout-name">Gyakorlat neve</label><input type="text" required maxlength="90" id="workout-name" list="exercise-suggestions" placeholder="pl. Fekvenyomás"><datalist id="exercise-suggestions"></datalist></div></div>
-          <div class="three-inputs"><div><label for="workout-sets">Sorozat</label><input required type="number" id="workout-sets" min="1" max="30" step="1" value="3"></div><div><label for="workout-reps">Ismétlés / sorozat</label><input required type="number" id="workout-reps" min="1" max="100" step="1" value="8"></div><div><label for="workout-load">Súly (kg)</label><input required type="number" id="workout-load" min="0" max="1000" step="0.5" placeholder="pl. 60" inputmode="decimal"></div></div>
+          <div class="three-inputs"><div><label for="workout-sets">Sorozat</label><input required type="number" id="workout-sets" min="1" max="30" step="1" value="3"></div><div><label for="workout-reps">Ismétlés / sorozat</label><input required type="number" id="workout-reps" min="1" max="100" step="1" value="8"></div><div><label for="workout-load">Súly (kg)</label><input required type="text" id="workout-load" placeholder="pl. 60" inputmode="decimal"></div></div>
           <label for="workout-variation">Eltérő gép / helyettesítés (opcionális)</label><input id="workout-variation" type="text" maxlength="120" placeholder="pl. másik gép, kézisúlyzó"><label for="workout-note">Megjegyzés (opcionális)</label><input id="workout-note" type="text" maxlength="180" placeholder="pl. utolsó sorozat nehéz volt">
           <p class="field-help">A volumen = sorozat × ismétlés × megadott súly. Testsúlyos gyakorlatnál csak a beírt terheléssel számolunk.</p>
           <div class="form-actions"><button class="primary" id="workout-save" type="submit">Gyakorlat mentése</button><button type="button" class="quiet" id="workout-reset">Új bejegyzés</button></div>
@@ -82,8 +82,8 @@
       <section id="page-settings" class="page" aria-label="Beállítások">
         <div class="heading"><div><div class="eyebrow">BEÁLLÍTÁSOK</div><h1>Profil és adatok</h1><p class="hint">A számításokhoz szükséges alapadatok és az adatbiztonsági lehetőségek.</p></div></div>
         <form class="panel" id="profile-form"><h2>Alapadatok</h2><p class="hint">A BMI-hez testmagasság, a Navy-testzsírbecsléshez a megfelelő mérési képlet kiválasztása is szükséges.</p>
-          <div class="two-inputs"><div><label for="profile-height">Testmagasság (cm)</label><input required type="number" min="100" max="250" step="0.1" id="profile-height" inputmode="decimal" placeholder="pl. 181"></div><div><label for="profile-sex">Navy-képlet</label><select id="profile-sex"><option value="male">Férfi képlet</option><option value="female">Női képlet</option></select></div></div>
-          <div class="two-inputs"><div><label for="profile-goal">Céltestsúly (kg, opcionális)</label><input type="number" min="20" max="400" step="0.1" id="profile-goal" inputmode="decimal" placeholder="pl. 82"></div><div><label for="profile-name">Megjelenített név (opcionális)</label><input type="text" maxlength="50" id="profile-name" placeholder="Név"></div></div>
+          <div class="two-inputs"><div><label for="profile-height">Testmagasság (cm)</label><input required type="text" id="profile-height" inputmode="decimal" placeholder="pl. 181"></div><div><label for="profile-sex">Navy-képlet</label><select id="profile-sex"><option value="male">Férfi képlet</option><option value="female">Női képlet</option></select></div></div>
+          <div class="two-inputs"><div><label for="profile-goal">Céltestsúly (kg, opcionális)</label><input type="text" id="profile-goal" inputmode="decimal" placeholder="pl. 82"></div><div><label for="profile-name">Megjelenített név (opcionális)</label><input type="text" maxlength="50" id="profile-name" placeholder="Név"></div></div>
           <p class="field-help">A profil módosítása után a korábbi mérésekből megjelenített számított mutatók is újraszámolódnak. Az eredeti mért értékeket nem változtatjuk meg.</p>
           <button class="primary" type="submit">Profil mentése</button>
         </form>
@@ -113,7 +113,7 @@
         </div>
         <div class="panel"><h2>Biztonsági mentés</h2><p class="hint">A napló kizárólag a készülék helyi IndexedDB-adatbázisában van. Nincs automatikus szinkronizálás, és a böngészőadatok elveszhetnek.</p><div class="form-actions"><button type="button" id="export-json" class="primary">Teljes mentés (.json)</button><button type="button" id="export-csv">Táblázatok (.csv)</button></div><div class="divider-line"></div><label for="import-file">Korábbi mentés visszaállítása (.json)</label><input id="import-file" type="file" accept=".json,application/json"><p class="field-help danger-text">A visszaállítás a jelenlegi helyi adatokat lecseréli. Mielőtt ezt használod, készíts friss biztonsági mentést.</p><button type="button" id="restore-json">Mentés visszaállítása</button></div>
         <div class="panel"><h2>A számítások értelmezése</h2><p class="hint"><b>BMI</b> = testsúly (kg) / testmagasság² (m²). Nem különbözteti meg a zsírtömeget az izomtömegtől.</p><p class="hint"><b>US Navy-testzsírbecslés:</b> férfiaknál has- és nyakkörfogatból, nőknél derék-, csípő- és nyakkörfogatból, valamint testmagasságból számol. A számítások az eredeti, hüvelykben felírt regressziós képletet használják, ezért a centimétereket 2,54-gyel osztjuk.</p><p class="hint">A becsült testzsírszázalék mérési hibára érzékeny. Különösen a hosszabb távú változás, és nem egyetlen eredmény értelmezendő.</p><p class="field-help">A részletes mérési leírás a README.md fájlban található.</p></div>
-        <div class="panel"><h2>Alkalmazásinformáció</h2><p class="hint">FitNapló 1.5 · Offline-first PWA · Helyi IndexedDB · Nincs követőkód vagy felhős adatküldés.</p><p class="hint" id="storage-status">Adatbázis ellenőrzése…</p></div>
+        <div class="panel"><h2>Alkalmazásinformáció</h2><p class="hint">FitNapló 1.6 · Offline-first PWA · Helyi IndexedDB · Nincs követőkód vagy felhős adatküldés.</p><p class="hint" id="storage-status">Adatbázis ellenőrzése…</p></div>
       </section>
     </main>
     <nav class="tabbar" aria-label="Fő navigáció">
@@ -124,7 +124,7 @@
     </nav>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=1.5" defer></script>
+  <script src="app.js?v=1.6" defer></script>
   <script src="calendar.js?v=1.3" defer></script>
 </body>
 </html>
