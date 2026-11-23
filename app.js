@@ -506,7 +506,7 @@ function renderCharts(){
     lineChart('dash-body-chart',[{name:m,color:'#a4a0ff',data:[...historic,...native]}],m==='fat'?'%':m==='bmi'?'BMI':'cm');
   }
   if(activePage==='workout'){
-    lineChart('workout-chart',[{name:$('workout-metric').value,color:'#65e0cf',data:workoutWeeklySeries()}],'kg');
+    renderWorkoutInsights();
   }
 }
 
@@ -760,7 +760,7 @@ async function init(){
   $('rename-plan').addEventListener('click',onRenamePlan);$('delete-plan').addEventListener('click',onDeletePlan);
   $('weight-reset').addEventListener('click',resetWeightForm);$('measure-reset').addEventListener('click',resetMeasureForm);$('workout-reset').addEventListener('click',resetWorkoutForm);
   document.addEventListener('click',onTableClick);
-  $('dash-body-metric').addEventListener('change',renderCharts);$('exercise-filter').addEventListener('change',renderCharts);$('workout-metric').addEventListener('change',renderCharts);
+  $('dash-body-metric').addEventListener('change',renderCharts);$('exercise-filter').addEventListener('change',()=>{workoutSelectedWeek=null;renderCharts();});$('workout-metric').addEventListener('change',()=>{workoutSelectedWeek=null;renderCharts();});
   $('export-json').addEventListener('click',exportJSON);$('export-csv').addEventListener('click',exportCSV);$('restore-json').addEventListener('click',restoreJSON);$('import-history-json').addEventListener('click',importHistoricalExcel);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshDatesOnNewDay();});
   window.addEventListener('focus',refreshDatesOnNewDay);
