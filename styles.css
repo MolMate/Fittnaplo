@@ -128,3 +128,39 @@ input[inputmode="decimal"]{font-size:16px}
   /* iOS Safari fókuszáláskor a 16px alatti űrlapmezőket automatikusan felnagyíthatja. */
   input,select,textarea{font-size:16px!important}
 }
+
+
+/* FitNapló 1.7: jól olvasható edzésfejlődési grafikonok és számszerű magyarázat */
+.workout-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.workout-filters>div{min-width:0}
+.workout-filters select{width:100%;max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:16px}
+.workout-metric-help{font-size:12px;line-height:1.6;color:#b1c7d8;margin:12px 0 16px}
+.workout-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:0 0 13px}
+.workout-stat{background:#0f2234;border:1px solid #2b4660;border-radius:11px;padding:11px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.workout-stat span{color:#a7c0cf;font-size:11px;line-height:1.4}
+.workout-stat strong{font-size:clamp(16px,3vw,21px);line-height:1.35;color:#eaf7ff;white-space:normal;overflow-wrap:anywhere}
+.workout-stat small{font-size:10px;color:#95afc3;line-height:1.4}
+.workout-point-detail{background:#102337;border:1px solid #34516a;border-radius:12px;padding:14px;margin:4px 0 15px;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.workout-detail-heading{color:#c0d9e7;font-weight:700;margin-bottom:4px}
+.workout-detail-value{font-size:13px;color:#c2dbe5}
+.workout-detail-value strong{color:#68e4d0;font-size:18px}
+.workout-detail-caption{margin-top:9px;color:#a2c0d1}
+.workout-point-detail ul{margin:5px 0 0;padding-left:20px}
+.workout-point-detail li{padding-bottom:4px}
+.workout-history-details{margin-top:16px}
+.workout-history-details summary{font-size:13px;font-weight:700;color:#cee6f0;cursor:pointer;padding:8px 0}
+.workout-history-details[open] summary{color:#76dfd1;margin-bottom:8px}
+#workout-insight-table table{font-size:12px;min-width:450px}
+#workout-insight-table td,#workout-insight-table th{white-space:normal;text-align:left;vertical-align:top}
+#workout-insight-table td:nth-child(2){font-weight:700;white-space:nowrap}
+#workout-insight-table .workout-table-selected{background:#224353}
+#workout-source-note{line-height:1.6;margin-top:13px}
+#workout-chart svg{touch-action:pan-y}
+@media(max-width:750px){
+ .workout-filters{grid-template-columns:minmax(0,1fr);gap:6px}
+ .workout-filters label{margin-top:7px}
+ .workout-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .workout-stat:last-child{grid-column:1/-1}
+ .workout-stat strong{font-size:18px}
+ #workout-insights-panel .chart-host{height:230px}
+}
