@@ -118,3 +118,13 @@ body.calendar-open{overflow:hidden}
  .previous-result button{width:100%}
  .session-card-actions button{width:100%}
 }
+
+
+/* v1.6 – iOS PWA: a weboldal nem nagyítható kétszer érintéssel vagy csippentéssel. */
+html,body{touch-action:pan-x pan-y}
+button,.date-trigger,.tabbar button{touch-action:manipulation}
+input[inputmode="decimal"]{font-size:16px}
+@media(max-width:750px){
+  /* iOS Safari fókuszáláskor a 16px alatti űrlapmezőket automatikusan felnagyíthatja. */
+  input,select,textarea{font-size:16px!important}
+}
