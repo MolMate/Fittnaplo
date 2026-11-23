@@ -1,5 +1,5 @@
-const CACHE='fitnaplo-static-v1.5';
-const ASSETS=['./','./index.html','./styles.css?v=1.5','./app.js?v=1.5','./calendar.js?v=1.3','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const CACHE='fitnaplo-static-v1.6';
+const ASSETS=['./','./index.html','./styles.css?v=1.6','./app.js?v=1.6','./calendar.js?v=1.3','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
