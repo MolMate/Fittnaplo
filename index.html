@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.6">
+  <link rel="stylesheet" href="styles.css?v=1.7">
   <title>FitNapló – Személyes fejlődéskövető</title>
 </head>
 <body>
@@ -74,7 +74,26 @@
           <p class="field-help">A volumen = sorozat × ismétlés × megadott súly. Testsúlyos gyakorlatnál csak a beírt terheléssel számolunk.</p>
           <div class="form-actions"><button class="primary" id="workout-save" type="submit">Gyakorlat mentése</button><button type="button" class="quiet" id="workout-reset">Új bejegyzés</button></div>
         </form></details>
-        <div class="panel chart-panel"><div class="panel-head"><div><h2>Edzésfejlődés</h2><p>Heti összesítés egy kiválasztott gyakorlathoz</p></div></div><div class="filter-bar"><div><label for="exercise-filter">Gyakorlat</label><select id="exercise-filter"></select></div><div><label for="workout-metric">Mutató</label><select id="workout-metric"><option value="maxLoad">Heti legnagyobb súly (kg)</option><option value="volume">Heti volumen (kg)</option><option value="estimated1rm">Becsült 1RM (kg)</option></select></div></div><div class="chart-host" id="workout-chart"></div><p class="field-help">Becsült 1RM (Epley): súly × (1 + ismétlés / 30), kizárólag 1–12 ismétlésnél. Nem tényleges maximumteszt.</p></div>
+        <div class="panel chart-panel" id="workout-insights-panel">
+          <div class="panel-head"><div><h2>Gyakorlat fejlődése</h2><p>Heti összehasonlítás a tényleges és az importált bejegyzések alapján</p></div></div>
+          <div class="workout-filters">
+            <div><label for="exercise-filter">Gyakorlat</label><select id="exercise-filter" aria-label="Gyakorlat kiválasztása"></select></div>
+            <div><label for="workout-metric">Mit szeretnél látni?</label><select id="workout-metric" aria-label="Fejlődési mutató kiválasztása">
+              <option value="maxLoad">Legnagyobb rögzített súly</option>
+              <option value="volume">Számított terhelési volumen</option>
+              <option value="estimated1rm">Becsült egyismétléses maximum</option>
+            </select></div>
+          </div>
+          <p id="workout-metric-help" class="workout-metric-help"></p>
+          <div id="workout-summary" class="workout-summary" aria-live="polite"></div>
+          <div class="chart-host" id="workout-chart" aria-label="Érintsd meg egy pontját a részletek megtekintéséhez"></div>
+          <div id="workout-point-detail" class="workout-point-detail" aria-live="polite"></div>
+          <details class="workout-history-details" open>
+            <summary>Heti eredmények táblázatban</summary>
+            <div id="workout-insight-table" class="table-wrap"></div>
+          </details>
+          <p id="workout-source-note" class="field-help"></p>
+        </div>
         <div class="panel"><div class="panel-head"><div><h2>Edzéselőzmények</h2><p>Az egyes sorok szerkeszthetők vagy törölhetők.</p></div></div><div class="table-wrap" id="workouts-table"></div></div>
         <div class="panel"><details id="weekly-workout-history"><summary>Excelből importált heti edzéselőzmények (részletek megnyitása)</summary><p class="hint">A hetek oszlopdátuma szerepel, nem egy bizonyított napi edzésdátum. Az eszközváltások és megjegyzések eredeti értékkel megmaradnak.</p><div class="table-wrap" id="history-workouts-table"></div></details></div>
       </section>
@@ -113,7 +132,7 @@
         </div>
         <div class="panel"><h2>Biztonsági mentés</h2><p class="hint">A napló kizárólag a készülék helyi IndexedDB-adatbázisában van. Nincs automatikus szinkronizálás, és a böngészőadatok elveszhetnek.</p><div class="form-actions"><button type="button" id="export-json" class="primary">Teljes mentés (.json)</button><button type="button" id="export-csv">Táblázatok (.csv)</button></div><div class="divider-line"></div><label for="import-file">Korábbi mentés visszaállítása (.json)</label><input id="import-file" type="file" accept=".json,application/json"><p class="field-help danger-text">A visszaállítás a jelenlegi helyi adatokat lecseréli. Mielőtt ezt használod, készíts friss biztonsági mentést.</p><button type="button" id="restore-json">Mentés visszaállítása</button></div>
         <div class="panel"><h2>A számítások értelmezése</h2><p class="hint"><b>BMI</b> = testsúly (kg) / testmagasság² (m²). Nem különbözteti meg a zsírtömeget az izomtömegtől.</p><p class="hint"><b>US Navy-testzsírbecslés:</b> férfiaknál has- és nyakkörfogatból, nőknél derék-, csípő- és nyakkörfogatból, valamint testmagasságból számol. A számítások az eredeti, hüvelykben felírt regressziós képletet használják, ezért a centimétereket 2,54-gyel osztjuk.</p><p class="hint">A becsült testzsírszázalék mérési hibára érzékeny. Különösen a hosszabb távú változás, és nem egyetlen eredmény értelmezendő.</p><p class="field-help">A részletes mérési leírás a README.md fájlban található.</p></div>
-        <div class="panel"><h2>Alkalmazásinformáció</h2><p class="hint">FitNapló 1.6 · Offline-first PWA · Helyi IndexedDB · Nincs követőkód vagy felhős adatküldés.</p><p class="hint" id="storage-status">Adatbázis ellenőrzése…</p></div>
+        <div class="panel"><h2>Alkalmazásinformáció</h2><p class="hint">FitNapló 1.7 · Offline-first PWA · Helyi IndexedDB · Nincs követőkód vagy felhős adatküldés.</p><p class="hint" id="storage-status">Adatbázis ellenőrzése…</p></div>
       </section>
     </main>
     <nav class="tabbar" aria-label="Fő navigáció">
@@ -124,7 +143,7 @@
     </nav>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=1.6" defer></script>
+  <script src="app.js?v=1.7" defer></script>
   <script src="calendar.js?v=1.3" defer></script>
 </body>
 </html>
